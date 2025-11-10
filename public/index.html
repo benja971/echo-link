@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Echo Link</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 24px; max-width: 600px; margin: 0 auto; background: #050816; color: #e5e7eb; }
+    h1 { font-size: 24px; margin-bottom: 16px; }
+    label { display: block; margin-bottom: 8px; font-size: 14px; }
+    input, button { font-size: 14px; padding: 8px 10px; border-radius: 6px; border: 1px solid #374151; background: #050816; color: #e5e7eb; }
+    input[type="file"] { border: none; padding-left: 0; }
+    button { cursor: pointer; border-color: #4b5563; }
+    button:hover { background: #111827; }
+    .field { margin-bottom: 14px; }
+    .result { margin-top: 16px; padding: 12px; border-radius: 6px; background: #111827; font-size: 13px; word-break: break-all; }
+    .small { font-size: 11px; color: #9ca3af; }
+  </style>
+</head>
+<body>
+  <h1>Echo Link</h1>
+
+  <div class="field">
+    <label for="token">Token d'upload (ne pas partager)</label>
+    <input id="token" type="password" placeholder="UPLOAD_TOKEN" />
+    <div class="small">Utilisé pour l'auth Bearer sur l'API /upload.</div>
+  </div>
+
+  <div class="field">
+    <label for="file">Fichier à partager</label>
+    <input id="file" type="file" />
+  </div>
+
+  <button id="submit">Uploader et générer le lien</button>
+
+  <div id="result" class="result" style="display:none;"></div>
+
+  <script>
+    const btn = document.getElementById("submit");
+    const fileInput = document.getElementById("file");
+    const tokenInput = document.getElementById("token");
+    const result = document.getElementById("result");
+
+    btn.addEventListener("click", async () => {
+      const file = fileInput.files[0];
+      const token = tokenInput.value.trim();
+
+      if (!file) {
+        result.style.display = "block";
+        result.textContent = "Aucun fichier sélectionné.";
+        return;
+      }
+      if (!token) {
+        result.style.display = "block";
+        result.textContent = "Token manquant.";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const res = await fetch("/upload", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          result.style.display = "block";
+          result.textContent = `Erreur: ${data.error || res.status}`;
+          return;
+        }
+
+        result.style.display = "block";
+        result.innerHTML =
+          "<div>Lien à coller dans Discord :</div>" +
+          `<div><strong>${data.shareUrl}</strong></div>` +
+          (data.directUrl ? `<div class="small">Lien direct fichier: ${data.directUrl}</div>` : "");
+      } catch (e) {
+        result.style.display = "block";
+        result.textContent = "Erreur réseau ou serveur.";
+      }
+    });
+  </script>
+</body>
+</html>
