@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
+import sharp from 'sharp';
 import { config } from '../config';
 import { uploadBuffer, getPublicUrl } from '../services/s3Service';
 import { createFileRecord } from '../services/fileService';
@@ -37,10 +38,27 @@ router.post('/', authenticateUpload, upload.single('file'), async (req: Request,
     const id = uuidv4();
     const originalExt = path.extname(req.file.originalname);
     const isVideo = req.file.mimetype.startsWith('video/');
+    const isImage = req.file.mimetype.startsWith('image/');
     const folder = isVideo ? 'videos' : 'files';
     const key = `${folder}/${id}${originalExt}`;
 
     console.log(`Uploading file: ${req.file.originalname} (${req.file.size} bytes) as ${key}`);
+
+    // Extract image dimensions if it's an image
+    let width: number | undefined;
+    let height: number | undefined;
+
+    if (isImage) {
+      try {
+        const metadata = await sharp(req.file.buffer).metadata();
+        width = metadata.width;
+        height = metadata.height;
+        console.log(`Image dimensions: ${width}x${height}`);
+      } catch (error) {
+        console.error('Failed to extract image dimensions:', error);
+        // Continue without dimensions if extraction fails
+      }
+    }
 
     await uploadBuffer({
       key,
@@ -54,6 +72,8 @@ router.post('/', authenticateUpload, upload.single('file'), async (req: Request,
       mimeType: req.file.mimetype,
       sizeBytes: req.file.size,
       title: req.file.originalname,
+      width,
+      height,
     });
 
     const shareUrl = `${config.publicBaseUrl}/v/${id}`;

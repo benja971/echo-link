@@ -46,12 +46,14 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   <meta property="og:type" content="${isImage ? 'website' : 'video.other'}" />
   <meta property="og:url" content="${escapeHtml(pageUrl)}" />
   <meta property="og:image" content="${escapeHtml(isImage ? fileUrl : thumbUrl)}" />
+  ${file.width && file.height ? `<meta property="og:image:width" content="${file.width}" />
+  <meta property="og:image:height" content="${file.height}" />` : ''}
   ${isVideo ? `<meta property="og:video" content="${escapeHtml(fileUrl)}" />
   <meta property="og:video:url" content="${escapeHtml(fileUrl)}" />
   <meta property="og:video:secure_url" content="${escapeHtml(fileUrl)}" />
   <meta property="og:video:type" content="${escapeHtml(file.mime_type)}" />
-  <meta property="og:video:width" content="1280" />
-  <meta property="og:video:height" content="720" />` : ''}
+  <meta property="og:video:width" content="${file.width || 1280}" />
+  <meta property="og:video:height" content="${file.height || 720}" />` : ''}
 
   <!-- Twitter Card meta tags -->
   <meta name="twitter:card" content="${isImage ? 'summary_large_image' : 'player'}" />
