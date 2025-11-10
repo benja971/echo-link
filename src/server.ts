@@ -3,6 +3,7 @@ import { config } from './config';
 import uploadRouter from './routes/upload';
 import publicRouter from './routes/public';
 import healthRouter from './routes/health';
+import filesRouter from './routes/files';
 import { runMigrations } from './db/migrate';
 
 const app: Express = express();
@@ -16,6 +17,7 @@ app.use(express.static('public'));
 app.use('/upload', uploadRouter);
 app.use('/v', publicRouter);
 app.use('/health', healthRouter);
+app.use('/files', filesRouter);
 
 app.get('/', (req: Request, res: Response) => {
   res.json({
