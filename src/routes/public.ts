@@ -22,16 +22,26 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
     }
 
     const fileUrl = getPublicUrl(file.s3_key);
-    const thumbUrl = file.thumbnail_s3_key
-      ? getPublicUrl(file.thumbnail_s3_key)
-      : fileUrl; // Use the file itself as thumbnail for images
+    const isVideo = file.mime_type.startsWith('video/');
+    const isImage = file.mime_type.startsWith('image/');
+
+    // Determine thumbnail URL
+    let thumbUrl: string;
+    if (file.thumbnail_s3_key) {
+      // Use generated thumbnail if available
+      thumbUrl = getPublicUrl(file.thumbnail_s3_key);
+    } else if (isImage) {
+      // For images, use the image itself as thumbnail
+      thumbUrl = fileUrl;
+    } else {
+      // For videos without thumbnails, use a placeholder
+      // Discord requires an actual image URL, not a video file
+      thumbUrl = `${config.publicBaseUrl}/placeholder-video.jpg`;
+    }
 
     const pageUrl = `${config.publicBaseUrl}/v/${id}`;
     const title = file.title || 'Shared file';
     const description = `File shared via echo-link (${formatBytes(file.size_bytes)})`;
-
-    const isVideo = file.mime_type.startsWith('video/');
-    const isImage = file.mime_type.startsWith('image/');
 
     const html = `<!DOCTYPE html>
 <html lang="en">
