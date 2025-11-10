@@ -50,9 +50,12 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   <meta property="og:video:url" content="${escapeHtml(fileUrl)}" />
   <meta property="og:video:secure_url" content="${escapeHtml(fileUrl)}" />
   <meta property="og:video:type" content="${escapeHtml(file.mime_type)}" />
-  <meta property="og:video:width" content="${file.width || 1280}" />
-  <meta property="og:video:height" content="${file.height || 720}" />
-  <meta property="og:image" content="${escapeHtml(thumbUrl)}" />` : ''}
+  <meta property="og:video:width" content="${file.width || 1920}" />
+  <meta property="og:video:height" content="${file.height || 1080}" />
+  <meta property="og:image" content="${escapeHtml(thumbUrl)}" />
+  <meta property="og:image:secure_url" content="${escapeHtml(thumbUrl)}" />
+  <meta property="og:image:type" content="image/jpeg" />
+  <meta property="og:image:alt" content="${escapeHtml(title)} thumbnail" />` : ''}
   ${isImage ? `<meta property="og:type" content="website" />
   <meta property="og:image" content="${escapeHtml(fileUrl)}" />
   <meta property="og:image:url" content="${escapeHtml(fileUrl)}" />
@@ -62,14 +65,19 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   ${file.width ? `<meta property="og:image:width" content="${file.width}" />` : ''}
   ${file.height ? `<meta property="og:image:height" content="${file.height}" />` : ''}` : ''}
 
-  <!-- Twitter Card meta tags -->
+  <!-- Twitter Card meta tags (required for Discord) -->
   <meta name="twitter:card" content="${isImage ? 'summary_large_image' : 'player'}" />
   <meta name="twitter:title" content="${escapeHtml(title)}" />
   <meta name="twitter:description" content="${escapeHtml(description)}" />
   <meta name="twitter:image" content="${escapeHtml(isImage ? fileUrl : thumbUrl)}" />
-  ${isVideo ? `<meta name="twitter:player" content="${escapeHtml(fileUrl)}" />
-  <meta name="twitter:player:width" content="1280" />
-  <meta name="twitter:player:height" content="720" />` : ''}
+  ${isVideo ? `<meta name="twitter:player" content="${escapeHtml(pageUrl)}" />
+  <meta name="twitter:player:width" content="${file.width || 1920}" />
+  <meta name="twitter:player:height" content="${file.height || 1080}" />
+  <meta name="twitter:player:stream" content="${escapeHtml(fileUrl)}" />
+  <meta name="twitter:player:stream:content_type" content="${escapeHtml(file.mime_type)}" />` : ''}
+
+  <!-- Discord theme color -->
+  <meta name="theme-color" content="#5865F2" />
   
   <style>
     * {
