@@ -1,0 +1,41 @@
+{
+  "name": "echo-link",
+  "version": "1.0.0",
+  "description": "Self-hosted file sharing service for Discord with MinIO backend",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "migrate": "node -e \"require('./dist/db/migrate').runMigrations()\""
+  },
+  "keywords": [
+    "file-sharing",
+    "discord",
+    "minio",
+    "s3"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.705.0",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.13.1",
+    "uuid": "^11.0.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.5",
+    "@types/multer": "^1.4.13",
+    "@types/node": "^22.19.0",
+    "@types/pg": "^8.15.6",
+    "@types/uuid": "^10.0.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
