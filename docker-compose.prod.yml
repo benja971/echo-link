@@ -1,25 +1,16 @@
-version: '3.8'
-
 services:
   echo-link:
     build:
       context: .
       dockerfile: Dockerfile
-      target: production
     container_name: echo-link
     restart: always
     env_file:
       - .env.production
     ports:
       - '3002:3000'
-    depends_on:
-      postgres:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
     networks:
       - infra-net
-      - echo-link-internal
     healthcheck:
       test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
       interval: 30s
