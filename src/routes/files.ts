@@ -4,6 +4,14 @@ import { getS3Object } from '../services/s3Service';
 
 const router = Router();
 
+// Handle CORS preflight
+router.options('/:path(*)', (req: Request, res: Response): void => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Range');
+  res.status(204).send();
+});
+
 router.get('/:path(*)', async (req: Request, res: Response): Promise<void> => {
   try {
     const fullPath = req.params.path;
@@ -33,8 +41,14 @@ router.get('/:path(*)', async (req: Request, res: Response): Promise<void> => {
     // Set appropriate headers
     res.setHeader('Content-Type', file.mime_type);
     res.setHeader('Content-Length', file.size_bytes);
-    res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable'); // Cache for 1 year
     res.setHeader('Accept-Ranges', 'bytes'); // Enable range requests for video seeking
+    res.setHeader('X-Content-Type-Options', 'nosniff'); // Security header
+
+    // Add CORS headers for embedding
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Range');
 
     // Stream the file to the response
     stream.pipe(res);

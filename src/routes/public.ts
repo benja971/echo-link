@@ -41,19 +41,26 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   <title>${escapeHtml(title)}</title>
   
   <!-- Open Graph meta tags -->
+  <meta property="og:site_name" content="echo-link" />
   <meta property="og:title" content="${escapeHtml(title)}" />
   <meta property="og:description" content="${escapeHtml(description)}" />
-  <meta property="og:type" content="${isImage ? 'website' : 'video.other'}" />
   <meta property="og:url" content="${escapeHtml(pageUrl)}" />
-  <meta property="og:image" content="${escapeHtml(isImage ? fileUrl : thumbUrl)}" />
-  ${file.width && file.height ? `<meta property="og:image:width" content="${file.width}" />
-  <meta property="og:image:height" content="${file.height}" />` : ''}
-  ${isVideo ? `<meta property="og:video" content="${escapeHtml(fileUrl)}" />
+  ${isVideo ? `<meta property="og:type" content="video.other" />
+  <meta property="og:video" content="${escapeHtml(fileUrl)}" />
   <meta property="og:video:url" content="${escapeHtml(fileUrl)}" />
   <meta property="og:video:secure_url" content="${escapeHtml(fileUrl)}" />
   <meta property="og:video:type" content="${escapeHtml(file.mime_type)}" />
   <meta property="og:video:width" content="${file.width || 1280}" />
-  <meta property="og:video:height" content="${file.height || 720}" />` : ''}
+  <meta property="og:video:height" content="${file.height || 720}" />
+  <meta property="og:image" content="${escapeHtml(thumbUrl)}" />` : ''}
+  ${isImage ? `<meta property="og:type" content="website" />
+  <meta property="og:image" content="${escapeHtml(fileUrl)}" />
+  <meta property="og:image:url" content="${escapeHtml(fileUrl)}" />
+  <meta property="og:image:secure_url" content="${escapeHtml(fileUrl)}" />
+  <meta property="og:image:type" content="${escapeHtml(file.mime_type)}" />
+  <meta property="og:image:alt" content="${escapeHtml(title)}" />
+  ${file.width ? `<meta property="og:image:width" content="${file.width}" />` : ''}
+  ${file.height ? `<meta property="og:image:height" content="${file.height}" />` : ''}` : ''}
 
   <!-- Twitter Card meta tags -->
   <meta name="twitter:card" content="${isImage ? 'summary_large_image' : 'player'}" />
