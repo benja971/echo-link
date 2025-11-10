@@ -21,3 +21,7 @@ services:
 networks:
   infra-net:
     external: true
+
+# Note: Les services postgres et minio doivent être déployés séparément
+# ou dans l'infrastructure existante. L'application se connecte via
+# les variables d'environnement DATABASE_HOST et S3_ENDPOINT.

@@ -3,6 +3,7 @@ import { config } from './config';
 import uploadRouter from './routes/upload';
 import publicRouter from './routes/public';
 import healthRouter from './routes/health';
+import { runMigrations } from './db/migrate';
 
 const app: Express = express();
 
@@ -24,12 +25,25 @@ app.get('/', (req: Request, res: Response) => {
   });
 });
 
-app.listen(config.port, () => {
-  console.log(`🚀 echo-link server running on port ${config.port}`);
-  console.log(`📊 Health check: http://localhost:${config.port}/health`);
-  console.log(`🔗 Public base URL: ${config.publicBaseUrl}`);
-  console.log(`📦 S3 endpoint: ${config.s3.endpoint}`);
-  console.log(`🪣 S3 bucket: ${config.s3.bucket}`);
-});
+async function startServer() {
+  try {
+    // Run migrations before starting server
+    await runMigrations();
+
+    app.listen(config.port, () => {
+      console.log(`🚀 echo-link server running on port ${config.port}`);
+      console.log(`📊 Health check: http://localhost:${config.port}/health`);
+      console.log(`🔗 Public base URL: ${config.publicBaseUrl}`);
+      console.log(`📦 S3 endpoint: ${config.s3.endpoint}`);
+      console.log(`🪣 S3 bucket: ${config.s3.bucket}`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Start server with migrations
+startServer();
 
 export default app;

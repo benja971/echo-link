@@ -28,6 +28,9 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
 COPY public ./public
 
+# Copy migrations directory (needed at runtime)
+COPY --from=builder /app/src/db/migrations ./dist/db/migrations
+
 ENV NODE_ENV=production
 
 USER node
