@@ -1,17 +1,25 @@
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
+# Copy dependency files
+COPY package.json pnpm-lock.yaml ./
+
+# Install production dependencies
+RUN pnpm install --prod --frozen-lockfile
+
+# Install dev dependencies for build
+RUN pnpm install -D typescript @types/node @types/express @types/multer @types/pg @types/uuid
+
+# Copy source and build
 COPY tsconfig.json ./
 COPY src ./src
+RUN pnpm run build
 
-RUN npm install -D typescript @types/node @types/express @types/multer @types/pg @types/uuid
-RUN npm run build
-
-FROM node:20-alpine
+FROM node:24-alpine
 
 WORKDIR /app
 
