@@ -7,6 +7,7 @@ import { config } from '../config';
 import { uploadBuffer, getPublicUrl } from '../services/s3Service';
 import { createFileRecord } from '../services/fileService';
 import { getUserByUploadToken, checkUserQuota } from '../services/userService';
+import { queueThumbnailGeneration } from '../services/thumbnailService';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -105,6 +106,11 @@ router.post('/', authenticateUpload, upload.single('file'), async (req: Request,
 
     const shareUrl = `${config.publicBaseUrl}/v/${id}`;
     const directUrl = getPublicUrl(key);
+
+    // Queue async thumbnail generation for videos (non-blocking)
+    if (isVideo) {
+      queueThumbnailGeneration(req.file.buffer, id, req.file.mimetype);
+    }
 
     res.status(200).json({
       id,

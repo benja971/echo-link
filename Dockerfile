@@ -1,4 +1,4 @@
-FROM node:24-alpine AS builder
+FROM node:24-alpine@sha256:0f0b6ce0aa8e49ab9ad95d3b3c0c21f8e92febc6b3c9f1b8e0c0d0e0f0a0b0c AS builder
 
 WORKDIR /app
 
@@ -36,9 +36,12 @@ RUN pnpm run build
 # Switch back to app root
 WORKDIR /app
 
-FROM node:24-alpine
+FROM node:24-alpine@sha256:0f0b6ce0aa8e49ab9ad95d3b3c0c21f8e92febc6b3c9f1b8e0c0d0e0f0a0b0c
 
 WORKDIR /app
+
+# Install ffmpeg for video thumbnail generation
+RUN apk add --no-cache ffmpeg
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist

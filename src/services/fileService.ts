@@ -76,3 +76,10 @@ export async function getRecentFilesGlobal(limit: number = 10): Promise<FileReco
 
   return result.rows;
 }
+
+export async function updateThumbnail(fileId: string, thumbnailKey: string): Promise<void> {
+  await query(
+    `UPDATE files SET thumbnail_s3_key = $2 WHERE id = $1`,
+    [fileId, thumbnailKey]
+  );
+}
