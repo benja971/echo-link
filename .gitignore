@@ -6,6 +6,11 @@ package-lock.json  # Using pnpm instead
 dist/
 build/
 
+# Frontend build output in public/
+public/assets/
+public/index.html
+public/vite.svg
+
 # Environment files
 .env
 .env.local
@@ -48,3 +53,6 @@ backup/
 
 # Misc
 CLAUDE.md
+.claude
+
+deep_search/
