@@ -285,8 +285,6 @@ mc anonymous set download myminio/echo-link
 - [ ] Génération automatique de thumbnails pour vidéos
 - [ ] Tâche cron de purge des fichiers expirés
 - [ ] Filtrage MIME types
-- [ ] Quotas par utilisateur/token
-- [ ] Statistiques d'utilisation
 - [ ] Support de métadonnées personnalisées
 
 ## 📄 Licence
