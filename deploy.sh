@@ -16,6 +16,12 @@ if [ "$EUID" -ne 0 ]; then
   echo -e "${YELLOW}⚠️  Not running as root. Some operations may require sudo.${NC}"
 fi
 
+# check pnpm
+if ! command -v pnpm &> /dev/null; then
+    echo -e "${RED}❌ pnpm is not installed. Please install pnpm first.${NC}"
+    exit 1
+fi
+
 # Check Docker
 if ! command -v docker &> /dev/null; then
     echo -e "${RED}❌ Docker is not installed. Please install Docker first.${NC}"
@@ -34,6 +40,10 @@ if ! docker network ls | grep -q infra-net; then
     docker network create infra-net
     echo -e "${GREEN}✅ Network 'infra-net' created.${NC}"
 fi
+
+# install dependencies
+echo -e "${GREEN}📦 Installing dependencies...${NC}"
+pnpm install
 
 echo ""
 echo -e "${GREEN}📦 Building Docker images...${NC}"
