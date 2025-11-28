@@ -33,8 +33,11 @@ COPY frontend/public ./public
 COPY frontend/src ./src
 RUN pnpm run build
 
-# Switch back to app root
+# Switch back to app root and copy landing page
 WORKDIR /app
+COPY public/landing.html ./public/
+COPY public/banner.png ./public/
+COPY public/echo-link.png ./public/
 
 FROM node:24-alpine3.20
 
