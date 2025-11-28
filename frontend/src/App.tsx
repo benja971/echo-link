@@ -94,17 +94,22 @@ export default function App() {
       content: 'Commencez par glisser-déposer votre fichier ici, ou cliquez pour parcourir vos fichiers. Tous les types de fichiers sont acceptés !',
       disableBeacon: true,
       placement: 'bottom',
+      spotlightClicks: true,
+      disableOverlayClose: true,
     },
     {
       target: '.onboarding-stats-button',
       content: 'Consultez vos statistiques d\'utilisation et vos fichiers récents ici. Vous pouvez suivre votre quota de stockage et de fichiers.',
       placement: 'bottom',
+      spotlightClicks: true,
+      disableOverlayClose: true,
     },
     {
-      target: '.onboarding-share-info',
-      content: 'Une fois votre fichier uploadé, copiez le lien de partage optimisé pour Discord avec prévisualisation intégrée. Parfait pour partager des vidéos et des images !',
+      target: '.onboarding-upload-button',
+      content: 'Une fois votre fichier sélectionné, cliquez ici pour l\'uploader. Vous recevrez ensuite un lien de partage optimisé pour Discord avec prévisualisation intégrée. Parfait pour partager des vidéos et des images !',
       placement: 'top',
-      spotlightClicks: false,
+      spotlightClicks: true,
+      disableOverlayClose: true,
     },
   ])
 
@@ -125,10 +130,21 @@ export default function App() {
   }, [authState])
 
   const handleOnboardingCallback = (data: CallBackProps) => {
-    const { status } = data
+    const { status, type, action } = data
+
+    // Log for debugging
+    console.log('Onboarding callback:', { status, type, action })
+
+    // Handle completion
     if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
       setRunOnboarding(false)
       localStorage.setItem(ONBOARDING_KEY, 'true')
+    }
+
+    // Handle errors (target not found)
+    if (type === 'error:target_not_found') {
+      console.error('Onboarding target not found:', data)
+      // Don't close the tour, just log the error
     }
   }
 
@@ -493,6 +509,10 @@ export default function App() {
         continuous
         showProgress
         showSkipButton
+        disableOverlayClose
+        disableCloseOnEsc={false}
+        scrollToFirstStep
+        spotlightClicks={false}
         callback={handleOnboardingCallback}
         styles={{
           options: {
@@ -528,6 +548,7 @@ export default function App() {
           close: 'Fermer',
           last: 'Terminer',
           next: 'Suivant',
+          open: 'Ouvrir',
           skip: 'Passer',
         }}
       />
@@ -824,7 +845,7 @@ export default function App() {
           <Button
             onClick={handleUpload}
             disabled={isUploading || !file}
-            className="w-full h-12 text-base font-medium"
+            className="onboarding-upload-button w-full h-12 text-base font-medium"
             size="lg"
           >
             {isUploading ? (
