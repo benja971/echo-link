@@ -1,6 +1,6 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
-import { config } from '../config';
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
+import { config } from '../config';
 
 // Build full endpoint URL from parts
 const protocol = config.s3.useSsl ? 'https' : 'http';
@@ -51,6 +51,15 @@ export async function getS3Object(key: string): Promise<Readable> {
   }
 
   return response.Body as Readable;
+}
+
+export async function deleteS3Object(key: string): Promise<void> {
+  const command = new DeleteObjectCommand({
+    Bucket: config.s3.bucket,
+    Key: key,
+  });
+
+  await s3Client.send(command);
 }
 
 export { s3Client };

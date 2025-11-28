@@ -36,6 +36,9 @@ interface Config {
   magicLink: {
     expirationMinutes: number;
   };
+  files: {
+    expirationDays: number;
+  };
 }
 
 function getEnvOrThrow(key: string): string {
@@ -85,5 +88,8 @@ export const config: Config = {
   },
   magicLink: {
     expirationMinutes: parseInt(getEnvOrDefault('MAGIC_LINK_EXPIRATION_MINUTES', '15'), 10),
+  },
+  files: {
+    expirationDays: parseInt(getEnvOrDefault('FILE_EXPIRATION_DAYS', '30'), 10),
   },
 };

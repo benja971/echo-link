@@ -1,4 +1,5 @@
 import { query } from '../db/pool';
+import { deleteS3Object } from './s3Service';
 
 interface CreateFileRecordParams {
   id: string;
@@ -82,4 +83,69 @@ export async function updateThumbnail(fileId: string, thumbnailKey: string): Pro
     `UPDATE files SET thumbnail_s3_key = $2 WHERE id = $1`,
     [fileId, thumbnailKey]
   );
+}
+
+// Get all expired files
+export async function getExpiredFiles(): Promise<FileRecord[]> {
+  const result = await query(
+    `SELECT id, s3_key, mime_type, size_bytes, user_id, created_at, title, thumbnail_s3_key, expires_at, width, height
+     FROM files
+     WHERE expires_at IS NOT NULL AND expires_at < NOW()`,
+    []
+  );
+
+  return result.rows;
+}
+
+// Delete a file record and its S3 objects
+export async function deleteFile(fileId: string): Promise<void> {
+  const file = await getFileById(fileId);
+  
+  if (!file) {
+    return;
+  }
+
+  // Delete from S3
+  try {
+    await deleteS3Object(file.s3_key);
+    console.log(`Deleted S3 object: ${file.s3_key}`);
+  } catch (error) {
+    console.error(`Failed to delete S3 object ${file.s3_key}:`, error);
+  }
+
+  // Delete thumbnail from S3 if exists
+  if (file.thumbnail_s3_key) {
+    try {
+      await deleteS3Object(file.thumbnail_s3_key);
+      console.log(`Deleted thumbnail: ${file.thumbnail_s3_key}`);
+    } catch (error) {
+      console.error(`Failed to delete thumbnail ${file.thumbnail_s3_key}:`, error);
+    }
+  }
+
+  // Delete from database
+  await query('DELETE FROM files WHERE id = $1', [fileId]);
+  console.log(`Deleted file record: ${fileId}`);
+}
+
+// Cleanup all expired files
+export async function cleanupExpiredFiles(): Promise<{ deleted: number; errors: number }> {
+  const expiredFiles = await getExpiredFiles();
+  let deleted = 0;
+  let errors = 0;
+
+  console.log(`Found ${expiredFiles.length} expired files to cleanup`);
+
+  for (const file of expiredFiles) {
+    try {
+      await deleteFile(file.id);
+      deleted++;
+    } catch (error) {
+      console.error(`Failed to delete file ${file.id}:`, error);
+      errors++;
+    }
+  }
+
+  console.log(`Cleanup complete: ${deleted} deleted, ${errors} errors`);
+  return { deleted, errors };
 }

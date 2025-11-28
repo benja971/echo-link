@@ -1,16 +1,25 @@
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
 import multer from 'multer';
-import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import sharp from 'sharp';
+import { v4 as uuidv4 } from 'uuid';
 import { config } from '../config';
-import { uploadBuffer, getPublicUrl } from '../services/s3Service';
 import { createFileRecord } from '../services/fileService';
-import { getUserByUploadToken, checkUserQuota } from '../services/userService';
+import { getPublicUrl, uploadBuffer } from '../services/s3Service';
 import { queueThumbnailGeneration } from '../services/thumbnailService';
+import { checkUserQuota, getUserByUploadToken } from '../services/userService';
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage() });
+
+// 100 MB file size limit
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: MAX_FILE_SIZE
+  }
+});
 
 // Fix UTF-8 encoding for filenames uploaded via multipart/form-data
 function fixFilenameEncoding(filename: string): string {
@@ -93,6 +102,10 @@ router.post('/', authenticateUpload, upload.single('file'), async (req: Request,
       contentType: req.file.mimetype,
     });
 
+    // Calculate expiration date
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + config.files.expirationDays);
+
     await createFileRecord({
       id,
       key,
@@ -102,6 +115,7 @@ router.post('/', authenticateUpload, upload.single('file'), async (req: Request,
       title: originalFilename,
       width,
       height,
+      expiresAt,
     });
 
     const shareUrl = `${config.publicBaseUrl}/v/${id}`;
