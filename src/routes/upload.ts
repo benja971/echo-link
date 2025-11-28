@@ -11,13 +11,10 @@ import { checkUserQuota, getUserByUploadToken } from '../services/userService';
 
 const router = Router();
 
-// 100 MB file size limit
-const MAX_FILE_SIZE = 100 * 1024 * 1024;
-
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: MAX_FILE_SIZE
+    fileSize: config.files.maxSizeBytes
   }
 });
 

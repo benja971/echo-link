@@ -38,6 +38,7 @@ interface Config {
   };
   files: {
     expirationDays: number;
+    maxSizeBytes: number;
   };
 }
 
@@ -91,5 +92,6 @@ export const config: Config = {
   },
   files: {
     expirationDays: parseInt(getEnvOrDefault('FILE_EXPIRATION_DAYS', '30'), 10),
+    maxSizeBytes: parseInt(getEnvOrDefault('MAX_FILE_SIZE_MB', '100'), 10) * 1024 * 1024,
   },
 };
