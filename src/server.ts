@@ -13,9 +13,7 @@ const app: Express = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from public directory
-app.use(express.static('public'));
-
+// API routes first (before static files)
 app.use('/upload', uploadRouter);
 app.use('/v', publicRouter);
 app.use('/health', healthRouter);
@@ -23,9 +21,20 @@ app.use('/files', filesRouter);
 app.use('/auth', authRouter);
 app.use('/stats', statsRouter);
 
-// SPA fallback - serve index.html for all unmatched routes
-app.get('*', (req: Request, res: Response) => {
-  res.sendFile('index.html', { root: 'public' });
+// Serve static files from public directory (for images at root)
+app.use(express.static('public', { index: false }));
+
+// Serve app static files (built by Vite in public/app/)
+app.use('/app', express.static('public/app'));
+
+// Landing page on root
+app.get('/', (req: Request, res: Response) => {
+  res.sendFile('landing.html', { root: 'public' });
+});
+
+// SPA fallback for /app - serve index.html for all /app routes
+app.get('/app*', (req: Request, res: Response) => {
+  res.sendFile('index.html', { root: 'public/app' });
 });
 
 async function startServer() {

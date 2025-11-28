@@ -5,13 +5,14 @@ import path from 'path'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  base: '/app/',
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
   build: {
-    outDir: '../public',
+    outDir: '../public/app',
     emptyOutDir: true,
   },
 })

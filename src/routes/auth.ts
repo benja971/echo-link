@@ -218,7 +218,7 @@ function renderSuccessPage(uploadToken: string): string {
 
       if (seconds <= 0) {
         clearInterval(interval);
-        window.location.href = '/';
+        window.location.href = '/app';
       }
     }, 1000);
   </script>
@@ -306,7 +306,7 @@ function renderErrorPage(title: string, message: string): string {
     <div class="error-icon"></div>
     <h1>${title}</h1>
     <p>${message}</p>
-    <a href="/">Retour à l'accueil</a>
+    <a href="/app">Retour à l'application</a>
   </div>
 </body>
 </html>
