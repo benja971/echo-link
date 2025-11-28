@@ -1,7 +1,7 @@
-import { query } from '../db/pool';
-import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 import { config } from '../config';
+import { query } from '../db/pool';
 
 // Types
 export interface User {
@@ -9,8 +9,6 @@ export interface User {
   email: string;
   created_at: Date;
   last_login_at: Date | null;
-  quota_max_files: number;
-  quota_max_bytes: number;
 }
 
 export interface MagicLink {
@@ -45,7 +43,7 @@ export interface UserQuotaUsage {
 // User operations
 export async function getUserByEmail(email: string): Promise<User | null> {
   const result = await query(
-    'SELECT id, email, created_at, last_login_at, quota_max_files, quota_max_bytes FROM users WHERE email = $1',
+    'SELECT id, email, created_at, last_login_at FROM users WHERE email = $1',
     [email]
   );
 
@@ -58,7 +56,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 
 export async function getUserById(userId: string): Promise<User | null> {
   const result = await query(
-    'SELECT id, email, created_at, last_login_at, quota_max_files, quota_max_bytes FROM users WHERE id = $1',
+    'SELECT id, email, created_at, last_login_at FROM users WHERE id = $1',
     [userId]
   );
 
@@ -75,7 +73,7 @@ export async function createUser(email: string): Promise<User> {
   const result = await query(
     `INSERT INTO users (id, email, created_at)
      VALUES ($1, $2, NOW())
-     RETURNING id, email, created_at, last_login_at, quota_max_files, quota_max_bytes`,
+     RETURNING id, email, created_at, last_login_at`,
     [id, email]
   );
 
@@ -212,14 +210,12 @@ export async function getUserQuotaUsage(userId: string): Promise<UserQuotaUsage>
   const result = await query(
     `SELECT
       u.id as user_id,
-      u.quota_max_files,
-      u.quota_max_bytes,
       COALESCE(COUNT(f.id), 0)::int as total_files,
       COALESCE(SUM(f.size_bytes), 0)::bigint as total_bytes
      FROM users u
      LEFT JOIN files f ON f.user_id = u.id
      WHERE u.id = $1
-     GROUP BY u.id, u.quota_max_files, u.quota_max_bytes`,
+     GROUP BY u.id`,
     [userId]
   );
 
@@ -228,38 +224,42 @@ export async function getUserQuotaUsage(userId: string): Promise<UserQuotaUsage>
   }
 
   const row = result.rows[0];
+  const maxFiles = config.files.maxPerUser;
+  const maxBytes = config.files.maxSizeBytesPerUser;
 
   return {
     user_id: row.user_id,
     total_files: row.total_files,
     total_bytes: row.total_bytes,
-    quota_max_files: row.quota_max_files,
-    quota_max_bytes: row.quota_max_bytes,
-    quota_files_percentage: row.quota_max_files > 0
-      ? Math.round((row.total_files / row.quota_max_files) * 100)
+    quota_max_files: maxFiles,
+    quota_max_bytes: maxBytes,
+    quota_files_percentage: maxFiles > 0
+      ? Math.round((row.total_files / maxFiles) * 100)
       : 0,
-    quota_bytes_percentage: row.quota_max_bytes > 0
-      ? Math.round((row.total_bytes / row.quota_max_bytes) * 100)
+    quota_bytes_percentage: maxBytes > 0
+      ? Math.round((row.total_bytes / maxBytes) * 100)
       : 0,
   };
 }
 
 export async function checkUserQuota(userId: string, fileSizeBytes: number): Promise<{ allowed: boolean; reason?: string }> {
   const usage = await getUserQuotaUsage(userId);
+  const maxFiles = config.files.maxPerUser;
+  const maxBytes = config.files.maxSizeBytesPerUser;
 
   // Check file count quota
-  if (usage.total_files >= usage.quota_max_files) {
+  if (usage.total_files >= maxFiles) {
     return {
       allowed: false,
-      reason: `File count quota exceeded. Maximum ${usage.quota_max_files} files allowed.`,
+      reason: `File count quota exceeded. Maximum ${maxFiles} files allowed.`,
     };
   }
 
   // Check storage size quota
-  if (usage.total_bytes + fileSizeBytes > usage.quota_max_bytes) {
+  if (usage.total_bytes + fileSizeBytes > maxBytes) {
     return {
       allowed: false,
-      reason: `Storage quota exceeded. Maximum ${formatBytes(usage.quota_max_bytes)} allowed.`,
+      reason: `Storage quota exceeded. Maximum ${formatBytes(maxBytes)} allowed.`,
     };
   }
 

@@ -39,6 +39,8 @@ interface Config {
   files: {
     expirationDays: number;
     maxSizeBytes: number;
+    maxPerUser: number;
+    maxSizeBytesPerUser: number;
   };
 }
 
@@ -91,7 +93,9 @@ export const config: Config = {
     expirationMinutes: parseInt(getEnvOrDefault('MAGIC_LINK_EXPIRATION_MINUTES', '15'), 10),
   },
   files: {
-    expirationDays: parseInt(getEnvOrDefault('FILE_EXPIRATION_DAYS', '30'), 10),
-    maxSizeBytes: parseInt(getEnvOrDefault('MAX_FILE_SIZE_MB', '100'), 10) * 1024 * 1024,
+    expirationDays: parseInt(getEnvOrDefault('FILE_EXPIRATION_DAYS', '10'), 10),
+    maxSizeBytes: parseInt(getEnvOrDefault('MAX_SIZE_MB', '100'), 10) * 1024 * 1024,
+    maxPerUser: parseInt(getEnvOrDefault('MAX_PER_USER', '25'), 10),
+    maxSizeBytesPerUser: parseInt(getEnvOrDefault('MAX_SIZE_MB_PER_USER', '500'), 10) * 1024 * 1024,
   },
 };
