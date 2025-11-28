@@ -14,10 +14,27 @@ RUN pnpm install --prod --frozen-lockfile
 # Install dev dependencies for build
 RUN pnpm install -D typescript @types/node @types/express @types/multer @types/pg @types/uuid
 
-# Copy source and build
+# Copy source and build backend
 COPY tsconfig.json ./
 COPY src ./src
 RUN pnpm run build
+
+# Copy frontend source and build it
+COPY frontend/package.json ./frontend/
+WORKDIR /app/frontend
+RUN pnpm install
+COPY frontend/tsconfig.json ./
+COPY frontend/vite.config.ts ./
+COPY frontend/index.html ./
+COPY frontend/postcss.config.js ./
+COPY frontend/tailwind.config.js ./
+COPY frontend/components.json ./
+COPY frontend/public ./public
+COPY frontend/src ./src
+RUN pnpm run build
+
+# Switch back to app root
+WORKDIR /app
 
 FROM node:24-alpine
 
@@ -26,7 +43,7 @@ WORKDIR /app
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
-COPY public ./public
+COPY --from=builder /app/public ./public
 
 # Copy migrations directory (needed at runtime) - directly from build context
 COPY src/db/migrations ./dist/db/migrations
