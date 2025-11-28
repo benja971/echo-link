@@ -10,6 +10,18 @@ import { createFileRecord } from '../services/fileService';
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
+// Fix UTF-8 encoding for filenames uploaded via multipart/form-data
+function fixFilenameEncoding(filename: string): string {
+  try {
+    // Multer receives filenames in Latin1 (ISO-8859-1), but they're actually UTF-8
+    // We need to decode from Latin1 and re-encode as UTF-8
+    return Buffer.from(filename, 'latin1').toString('utf8');
+  } catch (error) {
+    console.error('Failed to fix filename encoding:', error);
+    return filename;
+  }
+}
+
 function authenticateUpload(req: Request, res: Response, next: Function): void {
   const authHeader = req.headers.authorization;
   
@@ -36,13 +48,14 @@ router.post('/', authenticateUpload, upload.single('file'), async (req: Request,
     }
 
     const id = uuidv4();
-    const originalExt = path.extname(req.file.originalname);
+    const originalFilename = fixFilenameEncoding(req.file.originalname);
+    const originalExt = path.extname(originalFilename);
     const isVideo = req.file.mimetype.startsWith('video/');
     const isImage = req.file.mimetype.startsWith('image/');
     const folder = isVideo ? 'videos' : 'files';
     const key = `${folder}/${id}${originalExt}`;
 
-    console.log(`Uploading file: ${req.file.originalname} (${req.file.size} bytes) as ${key}`);
+    console.log(`Uploading file: ${originalFilename} (${req.file.size} bytes) as ${key}`);
 
     // Extract image dimensions if it's an image
     let width: number | undefined;
@@ -71,7 +84,7 @@ router.post('/', authenticateUpload, upload.single('file'), async (req: Request,
       key,
       mimeType: req.file.mimetype,
       sizeBytes: req.file.size,
-      title: req.file.originalname,
+      title: originalFilename,
       width,
       height,
     });
