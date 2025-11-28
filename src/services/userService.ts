@@ -227,10 +227,13 @@ export async function getUserQuotaUsage(userId: string): Promise<UserQuotaUsage>
   const maxFiles = config.files.maxPerUser;
   const maxBytes = config.files.maxSizeBytesPerUser;
 
+  // PostgreSQL bigint is returned as string, convert to number
+  const totalBytes = Number(row.total_bytes);
+
   return {
     user_id: row.user_id,
     total_files: row.total_files,
-    total_bytes: row.total_bytes,
+    total_bytes: totalBytes,
     quota_max_files: maxFiles,
     quota_max_bytes: maxBytes,
     quota_files_percentage: maxFiles > 0
