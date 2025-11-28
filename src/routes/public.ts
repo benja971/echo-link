@@ -40,8 +40,17 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
     }
 
     const pageUrl = `${config.publicBaseUrl}/v/${id}`;
-    const title = file.title || 'Shared file';
-    const description = `File shared via echo-link (${formatBytes(file.size_bytes)})`;
+
+    // Generate optimized title (50-60 chars for Open Graph)
+    const baseTitle = file.title || 'Shared file';
+    const title = baseTitle.length < 50
+      ? `${baseTitle} - Shared via echo-link`
+      : baseTitle;
+
+    // Generate optimized description (110-160 chars for Open Graph)
+    const fileTypeLabel = isVideo ? 'video' : isImage ? 'image' : 'file';
+    const sizeLabel = formatBytes(file.size_bytes);
+    const description = `View and download this ${fileTypeLabel} (${sizeLabel}) shared securely via echo-link. Click to access the full-quality ${fileTypeLabel}.`;
 
     const html = `<!DOCTYPE html>
 <html lang="en">
