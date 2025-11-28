@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react'
-import { Upload, Link2, FileIcon, Copy, Check, X } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Upload, Link2, FileIcon, Copy, Check, X, Mail, Loader2, BarChart3, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -10,8 +10,69 @@ interface UploadResponse {
   directUrl?: string
 }
 
+interface UserStats {
+  user: {
+    id: string
+    email: string
+    createdAt: string
+    lastLoginAt: string
+  }
+  quota: {
+    files: { used: number; max: number; percentage: number }
+    storage: { usedBytes: number; maxBytes: number; percentage: number }
+  }
+  recentFiles: {
+    id: string
+    title: string
+    mimeType: string
+    sizeBytes: number
+    createdAt: string
+    shareUrl: string
+  }[]
+}
+
+interface GlobalStats {
+  totals: {
+    users: number
+    files: number
+    storageBytes: number
+  }
+  today: {
+    files: number
+    storageBytes: number
+  }
+  thisWeek: {
+    files: number
+    storageBytes: number
+  }
+  thisMonth: {
+    files: number
+    storageBytes: number
+  }
+  recentFiles: {
+    id: string
+    title: string
+    mimeType: string
+    sizeBytes: number
+    createdAt: string
+    shareUrl: string
+  }[]
+}
+
+type AuthState = 'checking' | 'unauthenticated' | 'waiting_email' | 'authenticated'
+type StatsTab = 'user' | 'global'
+
+const TOKEN_KEY = 'echolink_upload_token'
+
 export default function App() {
-  const [token, setToken] = useState('')
+  const [authState, setAuthState] = useState<AuthState>('checking')
+  const [email, setEmail] = useState('')
+  const [isRequestingLink, setIsRequestingLink] = useState(false)
+  const [userStats, setUserStats] = useState<UserStats | null>(null)
+  const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null)
+  const [showStats, setShowStats] = useState(false)
+  const [statsTab, setStatsTab] = useState<StatsTab>('user')
+  
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
@@ -21,6 +82,110 @@ export default function App() {
   const [copiedDirect, setCopiedDirect] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Check for existing token on mount
+  useEffect(() => {
+    checkAuth()
+  }, [])
+
+  const getToken = () => localStorage.getItem(TOKEN_KEY)
+
+  const checkAuth = async () => {
+    const token = getToken()
+    if (!token) {
+      setAuthState('unauthenticated')
+      return
+    }
+
+    try {
+      const [userRes, globalRes] = await Promise.all([
+        fetch('/stats/me', { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch('/stats/global', { headers: { 'Authorization': `Bearer ${token}` } })
+      ])
+      
+      if (userRes.ok) {
+        setUserStats(await userRes.json())
+        setAuthState('authenticated')
+      } else {
+        localStorage.removeItem(TOKEN_KEY)
+        setAuthState('unauthenticated')
+        return
+      }
+      
+      if (globalRes.ok) {
+        setGlobalStats(await globalRes.json())
+      }
+    } catch {
+      setAuthState('unauthenticated')
+    }
+  }
+
+  const requestMagicLink = async () => {
+    if (!email.trim()) {
+      setError('Veuillez entrer votre adresse email.')
+      return
+    }
+
+    setIsRequestingLink(true)
+    setError(null)
+
+    try {
+      const res = await fetch('/auth/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        if (data.error === 'invalid_email') {
+          setError('Adresse email invalide.')
+        } else {
+          setError(data.error || 'Une erreur est survenue.')
+        }
+        return
+      }
+
+      setAuthState('waiting_email')
+    } catch {
+      setError('Erreur réseau. Veuillez réessayer.')
+    } finally {
+      setIsRequestingLink(false)
+    }
+  }
+
+  const logout = () => {
+    localStorage.removeItem(TOKEN_KEY)
+    setAuthState('unauthenticated')
+    setUserStats(null)
+    setGlobalStats(null)
+    setEmail('')
+    setFile(null)
+    setPreviewUrl(null)
+    setResult(null)
+  }
+
+  const refreshStats = async () => {
+    const token = getToken()
+    if (!token) return
+
+    try {
+      const [userRes, globalRes] = await Promise.all([
+        fetch('/stats/me', { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch('/stats/global', { headers: { 'Authorization': `Bearer ${token}` } })
+      ])
+      
+      if (userRes.ok) {
+        setUserStats(await userRes.json())
+      }
+      if (globalRes.ok) {
+        setGlobalStats(await globalRes.json())
+      }
+    } catch {
+      // Ignore errors
+    }
+  }
 
   const isImage = (file: File) => file.type.startsWith('image/')
   const isVideo = (file: File) => file.type.startsWith('video/')
@@ -77,8 +242,10 @@ export default function App() {
       setError('Aucun fichier sélectionné.')
       return
     }
-    if (!token.trim()) {
-      setError('Token manquant.')
+
+    const token = getToken()
+    if (!token) {
+      setError('Non authentifié.')
       return
     }
 
@@ -93,7 +260,7 @@ export default function App() {
       const res = await fetch('/upload', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token.trim()}`
+          'Authorization': `Bearer ${token}`
         },
         body: formData
       })
@@ -101,11 +268,19 @@ export default function App() {
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || `Erreur HTTP ${res.status}`)
+        if (data.error === 'quota_exceeded') {
+          setError(data.message || 'Quota dépassé.')
+        } else if (data.error === 'unauthorized') {
+          logout()
+          setError('Session expirée. Veuillez vous reconnecter.')
+        } else {
+          setError(data.error || `Erreur HTTP ${res.status}`)
+        }
         return
       }
 
       setResult(data)
+      refreshStats()
     } catch (e) {
       setError('Erreur réseau ou serveur.')
     } finally {
@@ -136,43 +311,310 @@ export default function App() {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
   }
 
+  // Checking auth state - show loading
+  if (authState === 'checking') {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-secondary/20">
+        <Card className="w-full max-w-md shadow-2xl border-border/50">
+          <CardContent className="pt-8 pb-8">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-muted-foreground">Chargement...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Unauthenticated - show email input
+  if (authState === 'unauthenticated') {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-secondary/20">
+        <Card className="w-full max-w-md shadow-2xl border-border/50">
+          <CardHeader className="space-y-1 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Link2 className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  Echo Link
+                </CardTitle>
+                <CardDescription className="text-base mt-1">
+                  Partagez vos fichiers facilement avec Discord
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium">
+                Adresse email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="votre@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && requestMagicLink()}
+                disabled={isRequestingLink}
+                className="h-11"
+              />
+              <p className="text-xs text-muted-foreground">
+                Vous recevrez un lien de connexion par email
+              </p>
+            </div>
+
+            <Button
+              onClick={requestMagicLink}
+              disabled={isRequestingLink || !email.trim()}
+              className="w-full h-12 text-base font-medium"
+              size="lg"
+            >
+              {isRequestingLink ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Envoi en cours...
+                </>
+              ) : (
+                <>
+                  <Mail className="mr-2 h-5 w-5" />
+                  Recevoir le lien de connexion
+                </>
+              )}
+            </Button>
+
+            {error && (
+              <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium animate-in fade-in slide-in-from-top-2 duration-300">
+                {error}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Waiting for email verification
+  if (authState === 'waiting_email') {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-secondary/20">
+        <Card className="w-full max-w-md shadow-2xl border-border/50">
+          <CardHeader className="space-y-1 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Mail className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-bold">Vérifiez vos emails</CardTitle>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="text-center space-y-4">
+              <div className="p-4 rounded-full bg-primary/10 w-20 h-20 mx-auto flex items-center justify-center">
+                <Mail className="h-10 w-10 text-primary" />
+              </div>
+              <p className="text-muted-foreground">
+                Un lien de connexion a été envoyé à <strong className="text-foreground">{email}</strong>
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Cliquez sur le lien dans l'email pour vous connecter. Le lien expire dans 15 minutes.
+              </p>
+            </div>
+
+            <Button
+              variant="outline"
+              onClick={() => {
+                setAuthState('unauthenticated')
+              }}
+              className="w-full"
+            >
+              Utiliser une autre adresse email
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Authenticated - main upload interface
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-secondary/20">
       <Card className="w-full max-w-2xl shadow-2xl border-border/50">
         <CardHeader className="space-y-1 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Link2 className="h-6 w-6 text-primary" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Link2 className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  Echo Link
+                </CardTitle>
+                <CardDescription className="text-base mt-1">
+                  {userStats?.user.email}
+                </CardDescription>
+              </div>
             </div>
-            <div>
-              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Echo Link
-              </CardTitle>
-              <CardDescription className="text-base mt-1">
-                Partagez vos fichiers facilement avec Discord
-              </CardDescription>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowStats(!showStats)}
+                title="Statistiques"
+              >
+                <BarChart3 className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={logout}
+                title="Déconnexion"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Token Input */}
-          <div className="space-y-2">
-            <Label htmlFor="token" className="text-sm font-medium">
-              Token d'upload
-            </Label>
-            <Input
-              id="token"
-              type="password"
-              placeholder="Entrez votre UPLOAD_TOKEN"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              disabled={isUploading}
-              className="h-11"
-            />
-            <p className="text-xs text-muted-foreground">
-              Utilisé pour l'authentification Bearer sur l'API /upload
-            </p>
-          </div>
+          {/* Stats Panel */}
+          {showStats && (
+            <div className="p-4 rounded-lg bg-secondary/30 border border-border space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+              {/* Tabs */}
+              <div className="flex gap-2 border-b border-border pb-2">
+                <Button
+                  variant={statsTab === 'user' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setStatsTab('user')}
+                >
+                  Mon espace
+                </Button>
+                <Button
+                  variant={statsTab === 'global' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setStatsTab('global')}
+                >
+                  Global
+                </Button>
+              </div>
+
+              {/* User Stats */}
+              {statsTab === 'user' && userStats && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Fichiers</span>
+                        <span>{userStats.quota.files.used} / {userStats.quota.files.max}</span>
+                      </div>
+                      <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary transition-all duration-300" 
+                          style={{ width: `${Math.min(userStats.quota.files.percentage, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Stockage</span>
+                        <span>{formatFileSize(userStats.quota.storage.usedBytes)} / {formatFileSize(userStats.quota.storage.maxBytes)}</span>
+                      </div>
+                      <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary transition-all duration-300" 
+                          style={{ width: `${Math.min(userStats.quota.storage.percentage, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {userStats.recentFiles.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm text-muted-foreground">Mes fichiers récents</h4>
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                        {userStats.recentFiles.slice(0, 5).map(file => (
+                          <div key={file.id} className="flex items-center justify-between text-sm py-1">
+                            <span className="truncate flex-1 mr-2">{file.title}</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2"
+                              onClick={() => copyToClipboard(file.shareUrl, 'share')}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Global Stats */}
+              {statsTab === 'global' && globalStats && (
+                <>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center p-3 bg-secondary/50 rounded-lg">
+                      <div className="text-2xl font-bold">{globalStats.totals.users}</div>
+                      <div className="text-xs text-muted-foreground">Utilisateurs</div>
+                    </div>
+                    <div className="text-center p-3 bg-secondary/50 rounded-lg">
+                      <div className="text-2xl font-bold">{globalStats.totals.files}</div>
+                      <div className="text-xs text-muted-foreground">Fichiers</div>
+                    </div>
+                    <div className="text-center p-3 bg-secondary/50 rounded-lg">
+                      <div className="text-2xl font-bold">{formatFileSize(globalStats.totals.storageBytes)}</div>
+                      <div className="text-xs text-muted-foreground">Stockage total</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div className="space-y-1">
+                      <div className="text-muted-foreground">Aujourd'hui</div>
+                      <div>{globalStats.today.files} fichiers</div>
+                      <div className="text-muted-foreground">{formatFileSize(globalStats.today.storageBytes)}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-muted-foreground">Cette semaine</div>
+                      <div>{globalStats.thisWeek.files} fichiers</div>
+                      <div className="text-muted-foreground">{formatFileSize(globalStats.thisWeek.storageBytes)}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-muted-foreground">Ce mois</div>
+                      <div>{globalStats.thisMonth.files} fichiers</div>
+                      <div className="text-muted-foreground">{formatFileSize(globalStats.thisMonth.storageBytes)}</div>
+                    </div>
+                  </div>
+
+                  {globalStats.recentFiles.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm text-muted-foreground">Derniers fichiers (plateforme)</h4>
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                        {globalStats.recentFiles.slice(0, 5).map(file => (
+                          <div key={file.id} className="flex items-center justify-between text-sm py-1">
+                            <span className="truncate flex-1 mr-2">{file.title}</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2"
+                              onClick={() => copyToClipboard(file.shareUrl, 'share')}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
 
           {/* Drag & Drop Zone */}
           <div className="space-y-3">
@@ -291,13 +733,13 @@ export default function App() {
           {/* Upload Button */}
           <Button
             onClick={handleUpload}
-            disabled={isUploading || !file || !token}
+            disabled={isUploading || !file}
             className="w-full h-12 text-base font-medium"
             size="lg"
           >
             {isUploading ? (
               <>
-                <Upload className="mr-2 h-5 w-5 animate-spin" />
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 Upload en cours...
               </>
             ) : (

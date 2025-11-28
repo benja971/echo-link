@@ -6,6 +6,7 @@ import sharp from 'sharp';
 import { config } from '../config';
 import { uploadBuffer, getPublicUrl } from '../services/s3Service';
 import { createFileRecord } from '../services/fileService';
+import { getUserByUploadToken, checkUserQuota } from '../services/userService';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -22,22 +23,24 @@ function fixFilenameEncoding(filename: string): string {
   }
 }
 
-function authenticateUpload(req: Request, res: Response, next: Function): void {
+async function authenticateUpload(req: Request, res: Response, next: Function): Promise<void> {
   const authHeader = req.headers.authorization;
-  
+
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     res.status(401).json({ error: 'unauthorized' });
     return;
   }
 
   const token = authHeader.substring(7);
-  
-  if (token !== config.uploadToken) {
-    res.status(401).json({ error: 'unauthorized' });
+
+  const user = await getUserByUploadToken(token);
+  if (user) {
+    (req as any).user = user;
+    next();
     return;
   }
 
-  next();
+  res.status(401).json({ error: 'unauthorized' });
 }
 
 router.post('/', authenticateUpload, upload.single('file'), async (req: Request, res: Response): Promise<void> => {
@@ -47,6 +50,7 @@ router.post('/', authenticateUpload, upload.single('file'), async (req: Request,
       return;
     }
 
+    const user = (req as any).user;
     const id = uuidv4();
     const originalFilename = fixFilenameEncoding(req.file.originalname);
     const originalExt = path.extname(originalFilename);
@@ -55,7 +59,17 @@ router.post('/', authenticateUpload, upload.single('file'), async (req: Request,
     const folder = isVideo ? 'videos' : 'files';
     const key = `${folder}/${id}${originalExt}`;
 
-    console.log(`Uploading file: ${originalFilename} (${req.file.size} bytes) as ${key}`);
+    console.log(`Uploading file: ${originalFilename} (${req.file.size} bytes) as ${key} for user ${user.email}`);
+
+    // Check quota
+    const quotaCheck = await checkUserQuota(user.id, req.file.size);
+    if (!quotaCheck.allowed) {
+      res.status(429).json({
+        error: 'quota_exceeded',
+        message: quotaCheck.reason
+      });
+      return;
+    }
 
     // Extract image dimensions if it's an image
     let width: number | undefined;
@@ -69,7 +83,6 @@ router.post('/', authenticateUpload, upload.single('file'), async (req: Request,
         console.log(`Image dimensions: ${width}x${height}`);
       } catch (error) {
         console.error('Failed to extract image dimensions:', error);
-        // Continue without dimensions if extraction fails
       }
     }
 
@@ -84,6 +97,7 @@ router.post('/', authenticateUpload, upload.single('file'), async (req: Request,
       key,
       mimeType: req.file.mimetype,
       sizeBytes: req.file.size,
+      userId: user.id,
       title: originalFilename,
       width,
       height,

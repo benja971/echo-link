@@ -23,7 +23,19 @@ interface Config {
   };
   publicBaseUrl: string;
   cdnPublicBaseUrl: string;
-  uploadToken: string;
+  email: {
+    host: string;
+    port: number;
+    secure: boolean;
+    auth: {
+      user: string;
+      pass: string;
+    };
+    from: string;
+  };
+  magicLink: {
+    expirationMinutes: number;
+  };
 }
 
 function getEnvOrThrow(key: string): string {
@@ -61,5 +73,17 @@ export const config: Config = {
   },
   publicBaseUrl: getEnvOrThrow('PUBLIC_BASE_URL'),
   cdnPublicBaseUrl: getEnvOrThrow('CDN_PUBLIC_BASE_URL'),
-  uploadToken: getEnvOrThrow('UPLOAD_TOKEN'),
+  email: {
+    host: getEnvOrThrow('EMAIL_HOST'),
+    port: parseInt(getEnvOrDefault('EMAIL_PORT', '587'), 10),
+    secure: getEnvOrDefault('EMAIL_SECURE', 'false') === 'true',
+    auth: {
+      user: getEnvOrThrow('EMAIL_USER'),
+      pass: getEnvOrThrow('EMAIL_PASSWORD'),
+    },
+    from: getEnvOrDefault('EMAIL_FROM', getEnvOrThrow('EMAIL_USER')),
+  },
+  magicLink: {
+    expirationMinutes: parseInt(getEnvOrDefault('MAGIC_LINK_EXPIRATION_MINUTES', '15'), 10),
+  },
 };
