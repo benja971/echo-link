@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import Joyride, { STATUS } from 'react-joyride'
+import type { CallBackProps, Step } from 'react-joyride'
 
 interface UploadResponse {
   shareUrl: string
@@ -63,6 +65,7 @@ type AuthState = 'checking' | 'unauthenticated' | 'waiting_email' | 'authenticat
 type StatsTab = 'user' | 'global'
 
 const TOKEN_KEY = 'echolink_upload_token'
+const ONBOARDING_KEY = 'echolink_onboarding_completed'
 
 export default function App() {
   const [authState, setAuthState] = useState<AuthState>('checking')
@@ -83,10 +86,51 @@ export default function App() {
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Onboarding state
+  const [runOnboarding, setRunOnboarding] = useState(false)
+  const [onboardingSteps] = useState<Step[]>([
+    {
+      target: '.onboarding-upload-zone',
+      content: 'Commencez par glisser-déposer votre fichier ici, ou cliquez pour parcourir vos fichiers. Tous les types de fichiers sont acceptés !',
+      disableBeacon: true,
+      placement: 'bottom',
+    },
+    {
+      target: '.onboarding-stats-button',
+      content: 'Consultez vos statistiques d\'utilisation et vos fichiers récents ici. Vous pouvez suivre votre quota de stockage et de fichiers.',
+      placement: 'bottom',
+    },
+    {
+      target: '.onboarding-share-info',
+      content: 'Une fois votre fichier uploadé, copiez le lien de partage optimisé pour Discord avec prévisualisation intégrée. Parfait pour partager des vidéos et des images !',
+      placement: 'top',
+      spotlightClicks: false,
+    },
+  ])
+
   // Check for existing token on mount
   useEffect(() => {
     checkAuth()
   }, [])
+
+  // Start onboarding for first-time users after authentication
+  useEffect(() => {
+    if (authState === 'authenticated') {
+      const hasCompletedOnboarding = localStorage.getItem(ONBOARDING_KEY)
+      if (!hasCompletedOnboarding) {
+        // Delay to let the UI render first
+        setTimeout(() => setRunOnboarding(true), 500)
+      }
+    }
+  }, [authState])
+
+  const handleOnboardingCallback = (data: CallBackProps) => {
+    const { status } = data
+    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+      setRunOnboarding(false)
+      localStorage.setItem(ONBOARDING_KEY, 'true')
+    }
+  }
 
   const getToken = () => localStorage.getItem(TOKEN_KEY)
 
@@ -443,6 +487,50 @@ export default function App() {
   // Authenticated - main upload interface
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-secondary/20">
+      <Joyride
+        steps={onboardingSteps}
+        run={runOnboarding}
+        continuous
+        showProgress
+        showSkipButton
+        callback={handleOnboardingCallback}
+        styles={{
+          options: {
+            primaryColor: 'hsl(var(--primary))',
+            backgroundColor: 'hsl(var(--background))',
+            textColor: 'hsl(var(--foreground))',
+            overlayColor: 'rgba(0, 0, 0, 0.6)',
+            arrowColor: 'hsl(var(--background))',
+            zIndex: 10000,
+          },
+          tooltip: {
+            borderRadius: '0.5rem',
+            padding: '1rem',
+          },
+          buttonNext: {
+            backgroundColor: 'hsl(var(--primary))',
+            fontSize: '0.875rem',
+            padding: '0.5rem 1rem',
+            borderRadius: '0.375rem',
+          },
+          buttonBack: {
+            color: 'hsl(var(--muted-foreground))',
+            fontSize: '0.875rem',
+            marginRight: 'auto',
+          },
+          buttonSkip: {
+            color: 'hsl(var(--muted-foreground))',
+            fontSize: '0.875rem',
+          },
+        }}
+        locale={{
+          back: 'Retour',
+          close: 'Fermer',
+          last: 'Terminer',
+          next: 'Suivant',
+          skip: 'Passer',
+        }}
+      />
       <Card className="w-full max-w-2xl shadow-2xl border-border/50">
         <CardHeader className="space-y-1 pb-4">
           <div className="flex items-center justify-between">
@@ -465,6 +553,7 @@ export default function App() {
                 size="icon"
                 onClick={() => setShowStats(!showStats)}
                 title="Statistiques"
+                className="onboarding-stats-button"
               >
                 <BarChart3 className="h-5 w-5" />
               </Button>
@@ -626,6 +715,7 @@ export default function App() {
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
               className={`
+                onboarding-upload-zone
                 relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
                 transition-all duration-200 ease-in-out
                 ${isDragging
@@ -759,7 +849,7 @@ export default function App() {
 
           {/* Success Result */}
           {result && (
-            <div className="space-y-4 p-5 rounded-lg bg-primary/5 border-2 border-primary/20 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="onboarding-share-info space-y-4 p-5 rounded-lg bg-primary/5 border-2 border-primary/20 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="flex items-center gap-2 mb-2">
                 <Check className="h-5 w-5 text-primary" />
                 <p className="font-semibold text-primary">Fichier uploadé avec succès !</p>
