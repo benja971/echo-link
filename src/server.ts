@@ -23,12 +23,9 @@ app.use('/files', filesRouter);
 app.use('/auth', authRouter);
 app.use('/stats', statsRouter);
 
-app.get('/', (req: Request, res: Response) => {
-  res.json({
-    name: 'echo-link',
-    version: '1.0.0',
-    status: 'running',
-  });
+// SPA fallback - serve index.html for all unmatched routes
+app.get('*', (req: Request, res: Response) => {
+  res.sendFile('index.html', { root: 'public' });
 });
 
 async function startServer() {
