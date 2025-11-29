@@ -18,6 +18,20 @@ services:
       retries: 3
       start_period: 40s
 
+  echo-link-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    container_name: echo-link-bot
+    restart: always
+    env_file:
+      - .env.production
+    networks:
+      - infra-net
+    depends_on:
+      echo-link:
+        condition: service_healthy
+
 networks:
   infra-net:
     external: true
@@ -25,3 +39,10 @@ networks:
 # Note: Les services postgres et minio doivent être déployés séparément
 # ou dans l'infrastructure existante. L'application se connecte via
 # les variables d'environnement DATABASE_HOST et S3_ENDPOINT.
+#
+# Variables requises pour le bot Discord dans .env.production:
+# - DISCORD_TOKEN: Token du bot Discord
+# - DISCORD_CLIENT_ID: Client ID de l'application Discord
+# - DISCORD_GUILD_ID: ID du serveur Discord (pour les commandes de dev)
+# - ECHOLINK_BASE_URL: URL de l'API Echo-Link (ex: https://echo-link.example.com)
+# - ECHOLINK_BOT_TOKEN: Token technique pour authentifier le bot auprès de l'API
