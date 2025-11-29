@@ -74,6 +74,33 @@ router.get('/me', authenticateUser, async (req: Request, res: Response): Promise
   }
 });
 
+// GET /stats/files - Get all user files
+router.get('/files', authenticateUser, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = (req as any).user;
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 1000; // Default to 1000 max
+
+    const files = await getRecentFilesByUser(user.id, limit);
+
+    const formattedFiles = files.map(file => ({
+      id: file.id,
+      title: file.title,
+      mimeType: file.mime_type,
+      sizeBytes: file.size_bytes,
+      createdAt: file.created_at,
+      shareUrl: `${config.publicBaseUrl}/v/${file.id}`,
+      directUrl: `${config.publicBaseUrl}/files/${file.s3_key}`,
+    }));
+
+    res.status(200).json({
+      files: formattedFiles,
+    });
+  } catch (error) {
+    console.error('Files list error:', error);
+    res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 // GET /stats/global - Get global platform statistics (authenticated)
 router.get('/global', authenticateUser, async (req: Request, res: Response): Promise<void> => {
   try {

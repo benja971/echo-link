@@ -3,6 +3,7 @@ import { config } from './config';
 import { runMigrations } from './db/migrate';
 import authRouter from './routes/auth';
 import cleanupRouter from './routes/cleanup';
+import deleteRouter from './routes/delete';
 import filesRouter from './routes/files';
 import healthRouter from './routes/health';
 import publicRouter from './routes/public';
@@ -23,6 +24,7 @@ app.use('/files', filesRouter);
 app.use('/auth', authRouter);
 app.use('/stats', statsRouter);
 app.use('/cleanup', cleanupRouter);
+app.use('/delete', deleteRouter);
 
 // Serve static files from public directory (for images at root)
 app.use(express.static('public', { index: false }));

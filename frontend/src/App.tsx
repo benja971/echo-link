@@ -1,378 +1,482 @@
-import { useState, useRef, useEffect } from 'react'
-import { Upload, Link2, FileIcon, Copy, Check, X, Mail, Loader2, BarChart3, LogOut } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import Joyride, { STATUS } from 'react-joyride'
-import type { CallBackProps, Step } from 'react-joyride'
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  BarChart3,
+  Check,
+  Copy,
+  FileIcon,
+  Grid,
+  Link2,
+  Loader2,
+  LogOut,
+  Mail,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import type { CallBackProps, Step } from "react-joyride";
+import Joyride, { STATUS } from "react-joyride";
 
 interface UploadResponse {
-  shareUrl: string
-  directUrl?: string
+  shareUrl: string;
+  directUrl?: string;
 }
 
 interface UserStats {
   user: {
-    id: string
-    email: string
-    createdAt: string
-    lastLoginAt: string
-  }
+    id: string;
+    email: string;
+    createdAt: string;
+    lastLoginAt: string;
+  };
   quota: {
-    files: { used: number; max: number; percentage: number }
-    storage: { usedBytes: number; maxBytes: number; percentage: number }
-  }
+    files: { used: number; max: number; percentage: number };
+    storage: { usedBytes: number; maxBytes: number; percentage: number };
+  };
   recentFiles: {
-    id: string
-    title: string
-    mimeType: string
-    sizeBytes: number
-    createdAt: string
-    shareUrl: string
-  }[]
+    id: string;
+    title: string;
+    mimeType: string;
+    sizeBytes: number;
+    createdAt: string;
+    shareUrl: string;
+  }[];
 }
 
 interface GlobalStats {
   totals: {
-    users: number
-    files: number
-    storageBytes: number
-  }
+    users: number;
+    files: number;
+    storageBytes: number;
+  };
   today: {
-    files: number
-    storageBytes: number
-  }
+    files: number;
+    storageBytes: number;
+  };
   thisWeek: {
-    files: number
-    storageBytes: number
-  }
+    files: number;
+    storageBytes: number;
+  };
   thisMonth: {
-    files: number
-    storageBytes: number
-  }
+    files: number;
+    storageBytes: number;
+  };
   recentFiles: {
-    id: string
-    title: string
-    mimeType: string
-    sizeBytes: number
-    createdAt: string
-    shareUrl: string
-  }[]
+    id: string;
+    title: string;
+    mimeType: string;
+    sizeBytes: number;
+    createdAt: string;
+    shareUrl: string;
+  }[];
 }
 
-type AuthState = 'checking' | 'unauthenticated' | 'waiting_email' | 'authenticated'
-type StatsTab = 'user' | 'global'
+type AuthState =
+  | "checking"
+  | "unauthenticated"
+  | "waiting_email"
+  | "authenticated";
+type StatsTab = "user" | "global";
 
-const TOKEN_KEY = 'echolink_upload_token'
-const ONBOARDING_KEY = 'echolink_onboarding_completed'
+const TOKEN_KEY = "echolink_upload_token";
+const ONBOARDING_KEY = "echolink_onboarding_completed";
 
 export default function App() {
-  const [authState, setAuthState] = useState<AuthState>('checking')
-  const [email, setEmail] = useState('')
-  const [isRequestingLink, setIsRequestingLink] = useState(false)
-  const [userStats, setUserStats] = useState<UserStats | null>(null)
-  const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null)
-  const [showStats, setShowStats] = useState(false)
-  const [statsTab, setStatsTab] = useState<StatsTab>('user')
-  
-  const [file, setFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [isUploading, setIsUploading] = useState(false)
-  const [result, setResult] = useState<UploadResponse | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [copiedShare, setCopiedShare] = useState(false)
-  const [copiedDirect, setCopiedDirect] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [authState, setAuthState] = useState<AuthState>("checking");
+  const [email, setEmail] = useState("");
+  const [isRequestingLink, setIsRequestingLink] = useState(false);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
+  const [showStats, setShowStats] = useState(false);
+  const [statsTab, setStatsTab] = useState<StatsTab>("user");
+  const [showGallery, setShowGallery] = useState(false);
+  const [allFiles, setAllFiles] = useState<any[]>([]);
+  const [isLoadingFiles, setIsLoadingFiles] = useState(false);
+  const [isDeletingFile, setIsDeletingFile] = useState<string | null>(null);
+
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [result, setResult] = useState<UploadResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [copiedShare, setCopiedShare] = useState(false);
+  const [copiedDirect, setCopiedDirect] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Onboarding state
-  const [runOnboarding, setRunOnboarding] = useState(false)
+  const [runOnboarding, setRunOnboarding] = useState(false);
   const [onboardingSteps] = useState<Step[]>([
     {
-      target: '.onboarding-upload-zone',
-      content: 'Commencez par glisser-déposer votre fichier ici, ou cliquez pour parcourir vos fichiers. Tous les types de fichiers sont acceptés !',
+      target: ".onboarding-upload-zone",
+      content:
+        "Commencez par glisser-déposer votre fichier ici, ou cliquez pour parcourir vos fichiers. Tous les types de fichiers sont acceptés !",
       disableBeacon: true,
-      placement: 'bottom',
+      placement: "bottom",
       spotlightClicks: true,
       disableOverlayClose: true,
     },
     {
-      target: '.onboarding-stats-button',
-      content: 'Consultez vos statistiques d\'utilisation et vos fichiers récents ici. Vous pouvez suivre votre quota de stockage et de fichiers.',
-      placement: 'bottom',
+      target: ".onboarding-stats-button",
+      content:
+        "Consultez vos statistiques d'utilisation et vos fichiers récents ici. Vous pouvez suivre votre quota de stockage et de fichiers.",
+      placement: "bottom",
       spotlightClicks: true,
       disableOverlayClose: true,
     },
     {
-      target: '.onboarding-upload-button',
-      content: 'Une fois votre fichier sélectionné, cliquez ici pour l\'uploader. Vous recevrez ensuite un lien de partage optimisé pour Discord avec prévisualisation intégrée. Parfait pour partager des vidéos et des images !',
-      placement: 'top',
+      target: ".onboarding-upload-button",
+      content:
+        "Une fois votre fichier sélectionné, cliquez ici pour l'uploader. Vous recevrez ensuite un lien de partage optimisé pour Discord avec prévisualisation intégrée. Parfait pour partager des vidéos et des images !",
+      placement: "top",
       spotlightClicks: true,
       disableOverlayClose: true,
     },
-  ])
+  ]);
 
   // Check for existing token on mount
   useEffect(() => {
-    checkAuth()
-  }, [])
+    checkAuth();
+  }, []);
 
   // Start onboarding for first-time users after authentication
   useEffect(() => {
-    if (authState === 'authenticated') {
-      const hasCompletedOnboarding = localStorage.getItem(ONBOARDING_KEY)
+    if (authState === "authenticated") {
+      const hasCompletedOnboarding = localStorage.getItem(ONBOARDING_KEY);
       if (!hasCompletedOnboarding) {
         // Delay to let the UI render first
-        setTimeout(() => setRunOnboarding(true), 500)
+        setTimeout(() => setRunOnboarding(true), 500);
       }
     }
-  }, [authState])
+  }, [authState]);
 
   const handleOnboardingCallback = (data: CallBackProps) => {
-    const { status, type, action } = data
+    const { status, type, action } = data;
 
     // Log for debugging
-    console.log('Onboarding callback:', { status, type, action })
+    console.log("Onboarding callback:", { status, type, action });
 
     // Handle completion
     if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
-      setRunOnboarding(false)
-      localStorage.setItem(ONBOARDING_KEY, 'true')
+      setRunOnboarding(false);
+      localStorage.setItem(ONBOARDING_KEY, "true");
     }
 
     // Handle errors (target not found)
-    if (type === 'error:target_not_found') {
-      console.error('Onboarding target not found:', data)
+    if (type === "error:target_not_found") {
+      console.error("Onboarding target not found:", data);
       // Don't close the tour, just log the error
     }
-  }
+  };
 
-  const getToken = () => localStorage.getItem(TOKEN_KEY)
+  const getToken = () => localStorage.getItem(TOKEN_KEY);
 
   const checkAuth = async () => {
-    const token = getToken()
+    const token = getToken();
     if (!token) {
-      setAuthState('unauthenticated')
-      return
+      setAuthState("unauthenticated");
+      return;
     }
 
     try {
       const [userRes, globalRes] = await Promise.all([
-        fetch('/stats/me', { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch('/stats/global', { headers: { 'Authorization': `Bearer ${token}` } })
-      ])
-      
+        fetch("/stats/me", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("/stats/global", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
       if (userRes.ok) {
-        setUserStats(await userRes.json())
-        setAuthState('authenticated')
+        setUserStats(await userRes.json());
+        setAuthState("authenticated");
       } else {
-        localStorage.removeItem(TOKEN_KEY)
-        setAuthState('unauthenticated')
-        return
+        localStorage.removeItem(TOKEN_KEY);
+        setAuthState("unauthenticated");
+        return;
       }
-      
+
       if (globalRes.ok) {
-        setGlobalStats(await globalRes.json())
+        setGlobalStats(await globalRes.json());
       }
     } catch {
-      setAuthState('unauthenticated')
+      setAuthState("unauthenticated");
     }
-  }
+  };
 
   const requestMagicLink = async () => {
     if (!email.trim()) {
-      setError('Veuillez entrer votre adresse email.')
-      return
+      setError("Veuillez entrer votre adresse email.");
+      return;
     }
 
-    setIsRequestingLink(true)
-    setError(null)
+    setIsRequestingLink(true);
+    setError(null);
 
     try {
-      const res = await fetch('/auth/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim() })
-      })
+      const res = await fetch("/auth/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
 
-      const data = await res.json()
+      const data = await res.json();
 
       if (!res.ok) {
-        if (data.error === 'invalid_email') {
-          setError('Adresse email invalide.')
+        if (data.error === "invalid_email") {
+          setError("Adresse email invalide.");
         } else {
-          setError(data.error || 'Une erreur est survenue.')
+          setError(data.error || "Une erreur est survenue.");
         }
-        return
+        return;
       }
 
-      setAuthState('waiting_email')
+      setAuthState("waiting_email");
     } catch {
-      setError('Erreur réseau. Veuillez réessayer.')
+      setError("Erreur réseau. Veuillez réessayer.");
     } finally {
-      setIsRequestingLink(false)
+      setIsRequestingLink(false);
     }
-  }
+  };
 
   const logout = () => {
-    localStorage.removeItem(TOKEN_KEY)
-    setAuthState('unauthenticated')
-    setUserStats(null)
-    setGlobalStats(null)
-    setEmail('')
-    setFile(null)
-    setPreviewUrl(null)
-    setResult(null)
-  }
+    localStorage.removeItem(TOKEN_KEY);
+    setAuthState("unauthenticated");
+    setUserStats(null);
+    setGlobalStats(null);
+    setEmail("");
+    setFile(null);
+    setPreviewUrl(null);
+    setResult(null);
+  };
 
   const refreshStats = async () => {
-    const token = getToken()
-    if (!token) return
+    const token = getToken();
+    if (!token) return;
 
     try {
       const [userRes, globalRes] = await Promise.all([
-        fetch('/stats/me', { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch('/stats/global', { headers: { 'Authorization': `Bearer ${token}` } })
-      ])
-      
+        fetch("/stats/me", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("/stats/global", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
       if (userRes.ok) {
-        setUserStats(await userRes.json())
+        setUserStats(await userRes.json());
       }
       if (globalRes.ok) {
-        setGlobalStats(await globalRes.json())
+        setGlobalStats(await globalRes.json());
       }
     } catch {
       // Ignore errors
     }
-  }
+  };
 
-  const isImage = (file: File) => file.type.startsWith('image/')
-  const isVideo = (file: File) => file.type.startsWith('video/')
+  const loadAllFiles = async () => {
+    const token = getToken();
+    if (!token) return;
+
+    setIsLoadingFiles(true);
+    try {
+      const res = await fetch("/stats/files", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setAllFiles(data.files);
+      }
+    } catch (error) {
+      console.error("Failed to load files:", error);
+    } finally {
+      setIsLoadingFiles(false);
+    }
+  };
+
+  const deleteFile = async (fileId: string) => {
+    if (
+      !confirm(
+        "Êtes-vous sûr de vouloir supprimer ce fichier ? Cette action est irréversible."
+      )
+    ) {
+      return;
+    }
+
+    const token = getToken();
+    if (!token) return;
+
+    setIsDeletingFile(fileId);
+    try {
+      const res = await fetch(`/delete/${fileId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        // Remove from local state
+        setAllFiles(allFiles.filter((f) => f.id !== fileId));
+        // Refresh stats to update quota
+        await refreshStats();
+      } else {
+        const data = await res.json();
+        alert(`Erreur: ${data.error || "Échec de la suppression"}`);
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("Erreur lors de la suppression du fichier");
+    } finally {
+      setIsDeletingFile(null);
+    }
+  };
+
+  // Load all files when gallery is toggled on
+  useEffect(() => {
+    if (showGallery && allFiles.length === 0) {
+      loadAllFiles();
+    }
+  }, [showGallery]);
+
+  const isImage = (file: File) => file.type.startsWith("image/");
+  const isVideo = (file: File) => file.type.startsWith("video/");
 
   const handleFileChange = (selectedFile: File) => {
-    setFile(selectedFile)
-    setError(null)
-    setResult(null)
+    setFile(selectedFile);
+    setError(null);
+    setResult(null);
 
     // Create preview for images and videos
     if (isImage(selectedFile) || isVideo(selectedFile)) {
-      const url = URL.createObjectURL(selectedFile)
-      setPreviewUrl(url)
+      const url = URL.createObjectURL(selectedFile);
+      setPreviewUrl(url);
     } else {
-      setPreviewUrl(null)
+      setPreviewUrl(null);
     }
-  }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      handleFileChange(e.target.files[0])
+      handleFileChange(e.target.files[0]);
     }
-  }
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }
+    e.preventDefault();
+    setIsDragging(true);
+  };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-  }
+    e.preventDefault();
+    setIsDragging(false);
+  };
 
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
+    e.preventDefault();
+    setIsDragging(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileChange(e.dataTransfer.files[0])
+      handleFileChange(e.dataTransfer.files[0]);
     }
-  }
+  };
 
   const clearFile = () => {
-    setFile(null)
-    setPreviewUrl(null)
+    setFile(null);
+    setPreviewUrl(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+      fileInputRef.current.value = "";
     }
-  }
+  };
 
   const handleUpload = async () => {
     if (!file) {
-      setError('Aucun fichier sélectionné.')
-      return
+      setError("Aucun fichier sélectionné.");
+      return;
     }
 
-    const token = getToken()
+    const token = getToken();
     if (!token) {
-      setError('Non authentifié.')
-      return
+      setError("Non authentifié.");
+      return;
     }
 
-    setIsUploading(true)
-    setError(null)
-    setResult(null)
+    setIsUploading(true);
+    setError(null);
+    setResult(null);
 
-    const formData = new FormData()
-    formData.append('file', file)
+    const formData = new FormData();
+    formData.append("file", file);
 
     try {
-      const res = await fetch('/upload', {
-        method: 'POST',
+      const res = await fetch("/upload", {
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: formData
-      })
+        body: formData,
+      });
 
-      const data = await res.json()
+      const data = await res.json();
 
       if (!res.ok) {
-        if (data.error === 'quota_exceeded') {
-          setError(data.message || 'Quota dépassé.')
-        } else if (data.error === 'unauthorized') {
-          logout()
-          setError('Session expirée. Veuillez vous reconnecter.')
+        if (data.error === "quota_exceeded") {
+          setError(data.message || "Quota dépassé.");
+        } else if (data.error === "unauthorized") {
+          logout();
+          setError("Session expirée. Veuillez vous reconnecter.");
         } else {
-          setError(data.error || `Erreur HTTP ${res.status}`)
+          setError(data.error || `Erreur HTTP ${res.status}`);
         }
-        return
+        return;
       }
 
-      setResult(data)
-      refreshStats()
+      setResult(data);
+      refreshStats();
+      // Reload gallery if it's open
+      if (showGallery) {
+        loadAllFiles();
+      }
+      // Clear file preview after successful upload
+      clearFile();
     } catch (e) {
-      setError('Erreur réseau ou serveur.')
+      setError("Erreur réseau ou serveur.");
     } finally {
-      setIsUploading(false)
+      setIsUploading(false);
     }
-  }
+  };
 
-  const copyToClipboard = async (text: string, type: 'share' | 'direct') => {
+  const copyToClipboard = async (text: string, type: "share" | "direct") => {
     try {
-      await navigator.clipboard.writeText(text)
-      if (type === 'share') {
-        setCopiedShare(true)
-        setTimeout(() => setCopiedShare(false), 2000)
+      await navigator.clipboard.writeText(text);
+      if (type === "share") {
+        setCopiedShare(true);
+        setTimeout(() => setCopiedShare(false), 2000);
       } else {
-        setCopiedDirect(true)
-        setTimeout(() => setCopiedDirect(false), 2000)
+        setCopiedDirect(true);
+        setTimeout(() => setCopiedDirect(false), 2000);
       }
     } catch (e) {
-      console.error('Failed to copy:', e)
+      console.error("Failed to copy:", e);
     }
-  }
+  };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 B'
-    const k = 1024
-    const sizes = ['B', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
-  }
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+  };
 
   // Checking auth state - show loading
-  if (authState === 'checking') {
+  if (authState === "checking") {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-secondary/20">
         <Card className="w-full max-w-md shadow-2xl border-border/50">
@@ -384,11 +488,11 @@ export default function App() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   // Unauthenticated - show email input
-  if (authState === 'unauthenticated') {
+  if (authState === "unauthenticated") {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-secondary/20">
         <Card className="w-full max-w-md shadow-2xl border-border/50">
@@ -418,7 +522,7 @@ export default function App() {
                 placeholder="votre@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && requestMagicLink()}
+                onKeyDown={(e) => e.key === "Enter" && requestMagicLink()}
                 disabled={isRequestingLink}
                 className="h-11"
               />
@@ -454,11 +558,11 @@ export default function App() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   // Waiting for email verification
-  if (authState === 'waiting_email') {
+  if (authState === "waiting_email") {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-secondary/20">
         <Card className="w-full max-w-md shadow-2xl border-border/50">
@@ -468,7 +572,9 @@ export default function App() {
                 <Mail className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-2xl font-bold">Vérifiez vos emails</CardTitle>
+                <CardTitle className="text-2xl font-bold">
+                  Vérifiez vos emails
+                </CardTitle>
               </div>
             </div>
           </CardHeader>
@@ -478,17 +584,19 @@ export default function App() {
                 <Mail className="h-10 w-10 text-primary" />
               </div>
               <p className="text-muted-foreground">
-                Un lien de connexion a été envoyé à <strong className="text-foreground">{email}</strong>
+                Un lien de connexion a été envoyé à{" "}
+                <strong className="text-foreground">{email}</strong>
               </p>
               <p className="text-sm text-muted-foreground">
-                Cliquez sur le lien dans l'email pour vous connecter. Le lien expire dans 15 minutes.
+                Cliquez sur le lien dans l'email pour vous connecter. Le lien
+                expire dans 15 minutes.
               </p>
             </div>
 
             <Button
               variant="outline"
               onClick={() => {
-                setAuthState('unauthenticated')
+                setAuthState("unauthenticated");
               }}
               className="w-full"
             >
@@ -497,7 +605,7 @@ export default function App() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   // Authenticated - main upload interface
@@ -516,40 +624,40 @@ export default function App() {
         callback={handleOnboardingCallback}
         styles={{
           options: {
-            primaryColor: 'hsl(var(--primary))',
-            backgroundColor: 'hsl(var(--background))',
-            textColor: 'hsl(var(--foreground))',
-            overlayColor: 'rgba(0, 0, 0, 0.6)',
-            arrowColor: 'hsl(var(--background))',
+            primaryColor: "hsl(var(--primary))",
+            backgroundColor: "hsl(var(--background))",
+            textColor: "hsl(var(--foreground))",
+            overlayColor: "rgba(0, 0, 0, 0.6)",
+            arrowColor: "hsl(var(--background))",
             zIndex: 10000,
           },
           tooltip: {
-            borderRadius: '0.5rem',
-            padding: '1rem',
+            borderRadius: "0.5rem",
+            padding: "1rem",
           },
           buttonNext: {
-            backgroundColor: 'hsl(var(--primary))',
-            fontSize: '0.875rem',
-            padding: '0.5rem 1rem',
-            borderRadius: '0.375rem',
+            backgroundColor: "hsl(var(--primary))",
+            fontSize: "0.875rem",
+            padding: "0.5rem 1rem",
+            borderRadius: "0.375rem",
           },
           buttonBack: {
-            color: 'hsl(var(--muted-foreground))',
-            fontSize: '0.875rem',
-            marginRight: 'auto',
+            color: "hsl(var(--muted-foreground))",
+            fontSize: "0.875rem",
+            marginRight: "auto",
           },
           buttonSkip: {
-            color: 'hsl(var(--muted-foreground))',
-            fontSize: '0.875rem',
+            color: "hsl(var(--muted-foreground))",
+            fontSize: "0.875rem",
           },
         }}
         locale={{
-          back: 'Retour',
-          close: 'Fermer',
-          last: 'Terminer',
-          next: 'Suivant',
-          open: 'Ouvrir',
-          skip: 'Passer',
+          back: "Retour",
+          close: "Fermer",
+          last: "Terminer",
+          next: "Suivant",
+          open: "Ouvrir",
+          skip: "Passer",
         }}
       />
       <Card className="w-full max-w-2xl shadow-2xl border-border/50">
@@ -572,7 +680,21 @@ export default function App() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setShowStats(!showStats)}
+                onClick={() => {
+                  setShowGallery(!showGallery);
+                  setShowStats(false);
+                }}
+                title="Galerie"
+              >
+                <Grid className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setShowStats(!showStats);
+                  setShowGallery(false);
+                }}
                 title="Statistiques"
                 className="onboarding-stats-button"
               >
@@ -590,53 +712,175 @@ export default function App() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Gallery Panel */}
+          {showGallery && (
+            <div className="p-4 rounded-lg bg-secondary/30 border border-border space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Ma galerie</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={loadAllFiles}
+                  disabled={isLoadingFiles}
+                >
+                  {isLoadingFiles ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Actualiser"
+                  )}
+                </Button>
+              </div>
+
+              {isLoadingFiles ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : allFiles.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>Aucun fichier pour le moment</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto">
+                  {allFiles.map((file) => {
+                    const isImageFile = file.mimeType.startsWith("image/");
+                    const isVideoFile = file.mimeType.startsWith("video/");
+
+                    return (
+                      <div
+                        key={file.id}
+                        className="group relative border border-border rounded-lg overflow-hidden bg-secondary/50 hover:bg-secondary/70 transition-colors"
+                      >
+                        {/* Thumbnail/Preview */}
+                        <div className="aspect-square bg-secondary/30 flex items-center justify-center overflow-hidden">
+                          {isImageFile ? (
+                            <img
+                              src={file.directUrl}
+                              alt={file.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : isVideoFile ? (
+                            <video
+                              src={file.directUrl}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <FileIcon className="h-12 w-12 text-muted-foreground" />
+                          )}
+                        </div>
+
+                        {/* File Info */}
+                        <div className="p-2 space-y-1">
+                          <p
+                            className="text-xs font-medium truncate"
+                            title={file.title}
+                          >
+                            {file.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatFileSize(file.sizeBytes)}
+                          </p>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            size="icon"
+                            variant="secondary"
+                            className="h-8 w-8 shadow-md"
+                            onClick={() =>
+                              copyToClipboard(file.shareUrl, "share")
+                            }
+                            title="Copier le lien"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="destructive"
+                            className="h-8 w-8 shadow-md"
+                            onClick={() => deleteFile(file.id)}
+                            disabled={isDeletingFile === file.id}
+                            title="Supprimer"
+                          >
+                            {isDeletingFile === file.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Stats Panel */}
           {showStats && (
             <div className="p-4 rounded-lg bg-secondary/30 border border-border space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
               {/* Tabs */}
               <div className="flex gap-2 border-b border-border pb-2">
                 <Button
-                  variant={statsTab === 'user' ? 'secondary' : 'ghost'}
+                  variant={statsTab === "user" ? "secondary" : "ghost"}
                   size="sm"
-                  onClick={() => setStatsTab('user')}
+                  onClick={() => setStatsTab("user")}
                 >
                   Mon espace
                 </Button>
                 <Button
-                  variant={statsTab === 'global' ? 'secondary' : 'ghost'}
+                  variant={statsTab === "global" ? "secondary" : "ghost"}
                   size="sm"
-                  onClick={() => setStatsTab('global')}
+                  onClick={() => setStatsTab("global")}
                 >
                   Global
                 </Button>
               </div>
 
               {/* User Stats */}
-              {statsTab === 'user' && userStats && (
+              {statsTab === "user" && userStats && (
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Fichiers</span>
-                        <span>{userStats.quota.files.used} / {userStats.quota.files.max}</span>
+                        <span>
+                          {userStats.quota.files.used} /{" "}
+                          {userStats.quota.files.max}
+                        </span>
                       </div>
                       <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-primary transition-all duration-300" 
-                          style={{ width: `${Math.min(userStats.quota.files.percentage, 100)}%` }}
+                        <div
+                          className="h-full bg-primary transition-all duration-300"
+                          style={{
+                            width: `${Math.min(
+                              userStats.quota.files.percentage,
+                              100
+                            )}%`,
+                          }}
                         />
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Stockage</span>
-                        <span>{formatFileSize(userStats.quota.storage.usedBytes)} / {formatFileSize(userStats.quota.storage.maxBytes)}</span>
+                        <span>
+                          {formatFileSize(userStats.quota.storage.usedBytes)} /{" "}
+                          {formatFileSize(userStats.quota.storage.maxBytes)}
+                        </span>
                       </div>
                       <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-primary transition-all duration-300" 
-                          style={{ width: `${Math.min(userStats.quota.storage.percentage, 100)}%` }}
+                        <div
+                          className="h-full bg-primary transition-all duration-300"
+                          style={{
+                            width: `${Math.min(
+                              userStats.quota.storage.percentage,
+                              100
+                            )}%`,
+                          }}
                         />
                       </div>
                     </div>
@@ -644,16 +888,25 @@ export default function App() {
 
                   {userStats.recentFiles.length > 0 && (
                     <div className="space-y-2">
-                      <h4 className="text-sm text-muted-foreground">Mes fichiers récents</h4>
+                      <h4 className="text-sm text-muted-foreground">
+                        Mes fichiers récents
+                      </h4>
                       <div className="space-y-1 max-h-32 overflow-y-auto">
-                        {userStats.recentFiles.slice(0, 5).map(file => (
-                          <div key={file.id} className="flex items-center justify-between text-sm py-1">
-                            <span className="truncate flex-1 mr-2">{file.title}</span>
+                        {userStats.recentFiles.slice(0, 5).map((file) => (
+                          <div
+                            key={file.id}
+                            className="flex items-center justify-between text-sm py-1"
+                          >
+                            <span className="truncate flex-1 mr-2">
+                              {file.title}
+                            </span>
                             <Button
                               variant="ghost"
                               size="sm"
                               className="h-6 px-2"
-                              onClick={() => copyToClipboard(file.shareUrl, 'share')}
+                              onClick={() =>
+                                copyToClipboard(file.shareUrl, "share")
+                              }
                             >
                               <Copy className="h-3 w-3" />
                             </Button>
@@ -666,20 +919,32 @@ export default function App() {
               )}
 
               {/* Global Stats */}
-              {statsTab === 'global' && globalStats && (
+              {statsTab === "global" && globalStats && (
                 <>
                   <div className="grid grid-cols-3 gap-4">
                     <div className="text-center p-3 bg-secondary/50 rounded-lg">
-                      <div className="text-2xl font-bold">{globalStats.totals.users}</div>
-                      <div className="text-xs text-muted-foreground">Utilisateurs</div>
+                      <div className="text-2xl font-bold">
+                        {globalStats.totals.users}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Utilisateurs
+                      </div>
                     </div>
                     <div className="text-center p-3 bg-secondary/50 rounded-lg">
-                      <div className="text-2xl font-bold">{globalStats.totals.files}</div>
-                      <div className="text-xs text-muted-foreground">Fichiers</div>
+                      <div className="text-2xl font-bold">
+                        {globalStats.totals.files}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Fichiers
+                      </div>
                     </div>
                     <div className="text-center p-3 bg-secondary/50 rounded-lg">
-                      <div className="text-2xl font-bold">{formatFileSize(globalStats.totals.storageBytes)}</div>
-                      <div className="text-xs text-muted-foreground">Stockage total</div>
+                      <div className="text-2xl font-bold">
+                        {formatFileSize(globalStats.totals.storageBytes)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Stockage total
+                      </div>
                     </div>
                   </div>
 
@@ -687,32 +952,47 @@ export default function App() {
                     <div className="space-y-1">
                       <div className="text-muted-foreground">Aujourd'hui</div>
                       <div>{globalStats.today.files} fichiers</div>
-                      <div className="text-muted-foreground">{formatFileSize(globalStats.today.storageBytes)}</div>
+                      <div className="text-muted-foreground">
+                        {formatFileSize(globalStats.today.storageBytes)}
+                      </div>
                     </div>
                     <div className="space-y-1">
                       <div className="text-muted-foreground">Cette semaine</div>
                       <div>{globalStats.thisWeek.files} fichiers</div>
-                      <div className="text-muted-foreground">{formatFileSize(globalStats.thisWeek.storageBytes)}</div>
+                      <div className="text-muted-foreground">
+                        {formatFileSize(globalStats.thisWeek.storageBytes)}
+                      </div>
                     </div>
                     <div className="space-y-1">
                       <div className="text-muted-foreground">Ce mois</div>
                       <div>{globalStats.thisMonth.files} fichiers</div>
-                      <div className="text-muted-foreground">{formatFileSize(globalStats.thisMonth.storageBytes)}</div>
+                      <div className="text-muted-foreground">
+                        {formatFileSize(globalStats.thisMonth.storageBytes)}
+                      </div>
                     </div>
                   </div>
 
                   {globalStats.recentFiles.length > 0 && (
                     <div className="space-y-2">
-                      <h4 className="text-sm text-muted-foreground">Derniers fichiers (plateforme)</h4>
+                      <h4 className="text-sm text-muted-foreground">
+                        Derniers fichiers (plateforme)
+                      </h4>
                       <div className="space-y-1 max-h-32 overflow-y-auto">
-                        {globalStats.recentFiles.slice(0, 5).map(file => (
-                          <div key={file.id} className="flex items-center justify-between text-sm py-1">
-                            <span className="truncate flex-1 mr-2">{file.title}</span>
+                        {globalStats.recentFiles.slice(0, 5).map((file) => (
+                          <div
+                            key={file.id}
+                            className="flex items-center justify-between text-sm py-1"
+                          >
+                            <span className="truncate flex-1 mr-2">
+                              {file.title}
+                            </span>
                             <Button
                               variant="ghost"
                               size="sm"
                               className="h-6 px-2"
-                              onClick={() => copyToClipboard(file.shareUrl, 'share')}
+                              onClick={() =>
+                                copyToClipboard(file.shareUrl, "share")
+                              }
                             >
                               <Copy className="h-3 w-3" />
                             </Button>
@@ -739,22 +1019,31 @@ export default function App() {
                 onboarding-upload-zone
                 relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
                 transition-all duration-200 ease-in-out
-                ${isDragging
-                  ? 'border-primary bg-primary/10 scale-[1.02]'
-                  : 'border-border hover:border-primary/50 hover:bg-secondary/50'
+                ${
+                  isDragging
+                    ? "border-primary bg-primary/10 scale-[1.02]"
+                    : "border-border hover:border-primary/50 hover:bg-secondary/50"
                 }
               `}
             >
               <div className="flex flex-col items-center gap-3">
-                <div className={`
+                <div
+                  className={`
                   p-4 rounded-full transition-all duration-200
-                  ${isDragging ? 'bg-primary/20' : 'bg-secondary'}
-                `}>
-                  <Upload className={`h-8 w-8 ${isDragging ? 'text-primary' : 'text-muted-foreground'}`} />
+                  ${isDragging ? "bg-primary/20" : "bg-secondary"}
+                `}
+                >
+                  <Upload
+                    className={`h-8 w-8 ${
+                      isDragging ? "text-primary" : "text-muted-foreground"
+                    }`}
+                  />
                 </div>
                 <div>
                   <p className="text-sm font-medium mb-1">
-                    {file ? 'Changer de fichier' : 'Glissez-déposez votre fichier ici'}
+                    {file
+                      ? "Changer de fichier"
+                      : "Glissez-déposez votre fichier ici"}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     ou cliquez pour parcourir vos fichiers
@@ -814,7 +1103,9 @@ export default function App() {
                       <div className="p-6 rounded-full bg-secondary">
                         <FileIcon className="h-16 w-16 text-muted-foreground" />
                       </div>
-                      <p className="text-sm text-muted-foreground">Pas d'aperçu disponible</p>
+                      <p className="text-sm text-muted-foreground">
+                        Pas d'aperçu disponible
+                      </p>
                     </div>
                   </div>
                 )}
@@ -830,9 +1121,13 @@ export default function App() {
                         {file.name}
                       </p>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span className="font-medium">{formatFileSize(file.size)}</span>
+                        <span className="font-medium">
+                          {formatFileSize(file.size)}
+                        </span>
                         <span>•</span>
-                        <span className="capitalize">{file.type || 'Type inconnu'}</span>
+                        <span className="capitalize">
+                          {file.type || "Type inconnu"}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -873,7 +1168,9 @@ export default function App() {
             <div className="onboarding-share-info space-y-4 p-5 rounded-lg bg-primary/5 border-2 border-primary/20 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="flex items-center gap-2 mb-2">
                 <Check className="h-5 w-5 text-primary" />
-                <p className="font-semibold text-primary">Fichier uploadé avec succès !</p>
+                <p className="font-semibold text-primary">
+                  Fichier uploadé avec succès !
+                </p>
               </div>
 
               <div className="space-y-3">
@@ -890,7 +1187,7 @@ export default function App() {
                     <Button
                       size="icon"
                       variant="outline"
-                      onClick={() => copyToClipboard(result.shareUrl, 'share')}
+                      onClick={() => copyToClipboard(result.shareUrl, "share")}
                       className="flex-shrink-0"
                     >
                       {copiedShare ? (
@@ -916,7 +1213,9 @@ export default function App() {
                       <Button
                         size="icon"
                         variant="outline"
-                        onClick={() => copyToClipboard(result.directUrl!, 'direct')}
+                        onClick={() =>
+                          copyToClipboard(result.directUrl!, "direct")
+                        }
                         className="flex-shrink-0"
                       >
                         {copiedDirect ? (
@@ -934,5 +1233,5 @@ export default function App() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
