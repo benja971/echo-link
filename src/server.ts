@@ -4,6 +4,7 @@ import { runMigrations } from './db/migrate';
 import authRouter from './routes/auth';
 import cleanupRouter from './routes/cleanup';
 import deleteRouter from './routes/delete';
+import discordRouter from './routes/discord';
 import filesRouter from './routes/files';
 import healthRouter from './routes/health';
 import publicRouter from './routes/public';
@@ -25,6 +26,7 @@ app.use('/auth', authRouter);
 app.use('/stats', statsRouter);
 app.use('/cleanup', cleanupRouter);
 app.use('/delete', deleteRouter);
+app.use('/discord', discordRouter);
 
 // Serve static files from public directory (for images at root)
 app.use(express.static('public', { index: false }));
