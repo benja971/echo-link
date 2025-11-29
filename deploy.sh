@@ -41,6 +41,11 @@ if ! docker network ls | grep -q infra-net; then
     echo -e "${GREEN}✅ Network 'infra-net' created.${NC}"
 fi
 
+# Pull latest changes
+echo ""
+echo -e "${GREEN}📥 Pulling latest changes from git...${NC}"
+git pull
+
 # install dependencies
 echo -e "${GREEN}📦 Installing dependencies...${NC}"
 pnpm install
