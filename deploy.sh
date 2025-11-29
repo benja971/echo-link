@@ -52,7 +52,7 @@ pnpm install
 
 echo ""
 echo -e "${GREEN}📦 Building Docker images...${NC}"
-docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml build --no-cache
 
 echo ""
 echo -e "${GREEN}🚀 Starting services...${NC}"
