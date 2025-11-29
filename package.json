@@ -12,7 +12,8 @@
     "start": "node dist/server.js",
     "start:api": "node dist/server.js",
     "start:bot": "node dist/discord/bot.js",
-    "migrate": "node -e \"require('./dist/db/migrate').runMigrations()\""
+    "migrate": "node -e \"require('./dist/db/migrate').runMigrations()\"",
+    "clear-all": "tsx scripts/clear-all.ts"
   },
   "keywords": [
     "file-sharing",
