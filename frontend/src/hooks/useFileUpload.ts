@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { UploadResponse } from '@/types'
+import type { UploadResponse } from '@/types'
 
 interface UseFileUploadProps {
   getToken: () => string | null

@@ -1,6 +1,6 @@
 import { Copy, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { UserStats, GlobalStats, StatsTab } from '@/types'
+import type { UserStats, GlobalStats, StatsTab } from '@/types'
 
 interface StatsDialogProps {
   isOpen: boolean

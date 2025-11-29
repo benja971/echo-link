@@ -2,7 +2,7 @@ import { Check, Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { UploadResponse } from '@/types'
+import type { UploadResponse } from '@/types'
 
 interface UploadResultsProps {
   result: UploadResponse

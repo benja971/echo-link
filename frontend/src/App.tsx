@@ -12,7 +12,7 @@ import { UploadResults } from '@/components/UploadResults'
 import { GalleryPanel } from '@/components/GalleryPanel'
 import { StatsDialog } from '@/components/StatsDialog'
 import { FilePreviewModal } from '@/components/FilePreviewModal'
-import { StatsTab, FileItem } from '@/types'
+import type { StatsTab, FileItem } from '@/types'
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 B'

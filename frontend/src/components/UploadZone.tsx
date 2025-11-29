@@ -1,13 +1,13 @@
 import { Upload, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { RefObject } from 'react'
+import type { RefObject } from 'react'
 
 interface UploadZoneProps {
   file: File | null
   isDragging: boolean
   isUploading: boolean
-  fileInputRef: RefObject<HTMLInputElement>
+  fileInputRef: RefObject<HTMLInputElement | null>
   onDragOver: (e: React.DragEvent) => void
   onDragLeave: (e: React.DragEvent) => void
   onDrop: (e: React.DragEvent) => void

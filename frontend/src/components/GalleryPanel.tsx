@@ -1,6 +1,6 @@
 import { Copy, Trash2, Loader2, FileIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { FileItem } from '@/types'
+import type { FileItem } from '@/types'
 
 interface GalleryPanelProps {
   allFiles: FileItem[]

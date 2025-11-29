@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { FileItem } from '@/types'
+import type { FileItem } from '@/types'
 
 interface UseGalleryProps {
   getToken: () => string | null

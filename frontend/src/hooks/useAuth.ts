@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { AuthState, UserStats, GlobalStats, TOKEN_KEY } from '@/types'
+import type { AuthState, UserStats, GlobalStats } from '@/types'
+import { TOKEN_KEY } from '@/types'
 
 export function useAuth() {
   const [authState, setAuthState] = useState<AuthState>('checking')

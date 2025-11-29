@@ -1,6 +1,6 @@
 import { X, Copy, Check, Download, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { FileItem } from '@/types'
+import type { FileItem } from '@/types'
 import { useState } from 'react'
 
 interface FilePreviewModalProps {
