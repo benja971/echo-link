@@ -296,7 +296,20 @@ export async function getGlobalStats(): Promise<GlobalStats> {
       (SELECT COALESCE(SUM(size_bytes), 0) FROM files WHERE created_at >= CURRENT_DATE - INTERVAL '30 days')::bigint as bytes_this_month`
   );
 
-  return result.rows[0];
+  const row = result.rows[0];
+  
+  // PostgreSQL bigint is returned as string, convert to number
+  return {
+    total_users: row.total_users,
+    total_files: row.total_files,
+    total_bytes: Number(row.total_bytes),
+    files_today: row.files_today,
+    bytes_today: Number(row.bytes_today),
+    files_this_week: row.files_this_week,
+    bytes_this_week: Number(row.bytes_this_week),
+    files_this_month: row.files_this_month,
+    bytes_this_month: Number(row.bytes_this_month),
+  };
 }
 
 // Helper functions
