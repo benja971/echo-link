@@ -42,6 +42,11 @@ interface Config {
     maxPerUser: number;
     maxSizeBytesPerUser: number;
   };
+  discordBot: {
+    botToken: string | null;
+    baseUrl: string | null;
+    discordToken: string | null;
+  };
 }
 
 function getEnvOrThrow(key: string): string {
@@ -97,5 +102,10 @@ export const config: Config = {
     maxSizeBytes: parseInt(getEnvOrDefault('MAX_SIZE_MB', '100'), 10) * 1024 * 1024,
     maxPerUser: parseInt(getEnvOrDefault('MAX_PER_USER', '25'), 10),
     maxSizeBytesPerUser: parseInt(getEnvOrDefault('MAX_SIZE_MB_PER_USER', '500'), 10) * 1024 * 1024,
+  },
+  discordBot: {
+    botToken: process.env.ECHOLINK_BOT_TOKEN || null,
+    baseUrl: process.env.ECHOLINK_BASE_URL || null,
+    discordToken: process.env.DISCORD_BOT_TOKEN || null,
   },
 };
