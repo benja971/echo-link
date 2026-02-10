@@ -1,9 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Upload } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { useAuth } from '@/hooks/useAuth'
 import { useFileUpload } from '@/hooks/useFileUpload'
 import { useGallery } from '@/hooks/useGallery'
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
+import { useClipboardPaste } from '@/hooks/useClipboardPaste'
+import { useDropAnywhere } from '@/hooks/useDropAnywhere'
+import { useDiscordLinkStatus } from '@/hooks/useDiscordLinkStatus'
 import { LoginPage } from '@/pages/LoginPage'
 import { DiscordUploadPage } from '@/pages/DiscordUploadPage'
 import { Header } from '@/components/Header'
@@ -15,31 +19,27 @@ import { GalleryPanel } from '@/components/GalleryPanel'
 import { StatsDialog } from '@/components/StatsDialog'
 import { AccountDialog } from '@/components/AccountDialog'
 import { FilePreviewModal } from '@/components/FilePreviewModal'
+import { formatFileSize } from '@/lib/utils'
 import type { StatsTab, FileItem } from '@/types'
 
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
-}
+type Panel = 'gallery' | 'stats' | 'account' | null
 
 export default function App() {
-  const [showGallery, setShowGallery] = useState(false)
-  const [showStats, setShowStats] = useState(false)
-  const [showAccount, setShowAccount] = useState(false)
+  const [activePanel, setActivePanel] = useState<Panel>(null)
   const [statsTab, setStatsTab] = useState<StatsTab>('user')
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null)
-  const [hasDiscordLinked, setHasDiscordLinked] = useState<boolean | undefined>(undefined)
 
   const auth = useAuth()
-  
+  const { hasDiscordLinked, setHasDiscordLinked } = useDiscordLinkStatus(
+    auth.getToken,
+    auth.authState === 'authenticated'
+  )
+
   const upload = useFileUpload({
     getToken: auth.getToken,
     onSuccess: () => {
       auth.refreshStats()
-      if (showGallery) {
+      if (activePanel === 'gallery') {
         gallery.loadAllFiles()
       }
     }
@@ -47,110 +47,27 @@ export default function App() {
 
   const gallery = useGallery({
     getToken: auth.getToken,
-    showGallery,
+    showGallery: activePanel === 'gallery',
     onRefreshStats: auth.refreshStats
   })
 
-  // Check Discord link status on mount
-  useEffect(() => {
-    if (auth.authState === 'authenticated') {
-      checkDiscordLinkStatus()
-    }
-  }, [auth.authState])
+  const isDragging = useDropAnywhere({
+    onFile: upload.handleFileChange,
+    enabled: !upload.isUploading,
+  })
 
-  const checkDiscordLinkStatus = async () => {
-    const token = auth.getToken()
-    if (!token) return
+  useClipboardPaste({
+    onFile: upload.handleFileChange,
+    enabled: !upload.isUploading,
+  })
 
-    try {
-      const res = await fetch('/me/discord/link/status', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setHasDiscordLinked(data.hasDiscordLinked)
-      }
-    } catch {
-      // Ignore
-    }
-  }
+  useKeyboardShortcuts([
+    { key: 'o', ctrl: true, action: () => upload.fileInputRef.current?.click() },
+    { key: 'Escape', action: () => upload.clearFile(), enabled: !!upload.file },
+  ])
 
-  const openAccountLink = () => {
-    setShowAccount(true)
-    setShowStats(false)
-    setShowGallery(false)
-  }
-
-  // Handle paste (Ctrl+V with image/video in clipboard)
-  useEffect(() => {
-    const handlePaste = (e: ClipboardEvent) => {
-      if (upload.isUploading) return
-      const items = e.clipboardData?.items
-      if (!items) return
-
-      for (const item of items) {
-        if (item.kind === 'file') {
-          const pastedFile = item.getAsFile()
-          if (pastedFile) {
-            e.preventDefault()
-            upload.handleFileChange(pastedFile)
-            return
-          }
-        }
-      }
-    }
-
-    document.addEventListener('paste', handlePaste)
-    return () => document.removeEventListener('paste', handlePaste)
-  }, [upload.isUploading])
-
-  // Handle drag events globally (drop-anywhere)
-  useEffect(() => {
-    const handleDragOver = (e: DragEvent) => {
-      e.preventDefault()
-      upload.setIsDragging(true)
-    }
-
-    const handleDragLeave = (e: DragEvent) => {
-      e.preventDefault()
-      // Only leave when exiting the window (relatedTarget is null)
-      if (!e.relatedTarget && e.clientX === 0 && e.clientY === 0) {
-        upload.setIsDragging(false)
-      }
-    }
-
-    const handleDrop = (e: DragEvent) => {
-      e.preventDefault()
-      upload.setIsDragging(false)
-      if (e.dataTransfer?.files && e.dataTransfer.files[0]) {
-        upload.handleFileChange(e.dataTransfer.files[0])
-      }
-    }
-
-    document.addEventListener('dragover', handleDragOver)
-    document.addEventListener('dragleave', handleDragLeave)
-    document.addEventListener('drop', handleDrop)
-    return () => {
-      document.removeEventListener('dragover', handleDragOver)
-      document.removeEventListener('dragleave', handleDragLeave)
-      document.removeEventListener('drop', handleDrop)
-    }
-  }, [upload.isUploading])
-
-  // Ctrl+O to open file picker
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
-        const tag = (e.target as HTMLElement)?.tagName
-        if (tag === 'INPUT' || tag === 'TEXTAREA') return
-        e.preventDefault()
-        upload.fileInputRef.current?.click()
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  const togglePanel = (panel: Panel) =>
+    setActivePanel(prev => prev === panel ? null : panel)
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -189,18 +106,12 @@ export default function App() {
       <Card className="w-full max-w-2xl shadow-2xl border-border/50">
         <Header
           email={auth.userStats?.user.email || ''}
-          showGallery={showGallery}
-          showStats={showStats}
+          showGallery={activePanel === 'gallery'}
+          showStats={activePanel === 'stats'}
           hasDiscordLinked={hasDiscordLinked}
-          onToggleGallery={() => {
-            setShowGallery(!showGallery)
-            setShowStats(false)
-          }}
-          onToggleStats={() => {
-            setShowStats(!showStats)
-            setShowGallery(false)
-          }}
-          onOpenAccountLink={openAccountLink}
+          onToggleGallery={() => togglePanel('gallery')}
+          onToggleStats={() => togglePanel('stats')}
+          onOpenAccountLink={() => setActivePanel('account')}
           onLogout={auth.logout}
         />
 
@@ -239,7 +150,7 @@ export default function App() {
             />
           )}
 
-          {!showGallery && auth.userStats && auth.userStats.recentFiles.length > 0 && (
+          {activePanel !== 'gallery' && auth.userStats && auth.userStats.recentFiles.length > 0 && (
             <RecentLinks
               recentFiles={auth.userStats.recentFiles.slice(0, 3)}
               onCopy={(url) => upload.copyToClipboard(url, 'share')}
@@ -249,7 +160,7 @@ export default function App() {
       </Card>
 
       {/* Gallery panel as a side drawer */}
-      {showGallery && (
+      {activePanel === 'gallery' && (
         <Card className="fixed right-4 top-4 bottom-4 w-80 shadow-2xl border-border/50 overflow-hidden">
           <CardContent className="h-full p-4">
             <GalleryPanel
@@ -268,8 +179,8 @@ export default function App() {
 
       {/* Stats dialog */}
       <StatsDialog
-        isOpen={showStats}
-        onClose={() => setShowStats(false)}
+        isOpen={activePanel === 'stats'}
+        onClose={() => setActivePanel(null)}
         userStats={auth.userStats}
         globalStats={auth.globalStats}
         activeTab={statsTab}
@@ -280,8 +191,8 @@ export default function App() {
 
       {/* Account dialog */}
       <AccountDialog
-        isOpen={showAccount}
-        onClose={() => setShowAccount(false)}
+        isOpen={activePanel === 'account'}
+        onClose={() => setActivePanel(null)}
         userStats={auth.userStats}
         getToken={auth.getToken}
         onDiscordLinked={() => setHasDiscordLinked(true)}
@@ -296,7 +207,7 @@ export default function App() {
       />
 
       {/* Full-screen drag overlay */}
-      {upload.isDragging && (
+      {isDragging && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm border-4 border-dashed border-primary/50 pointer-events-none">
           <div className="flex flex-col items-center gap-3 text-primary">
             <Upload className="h-16 w-16" />

@@ -15,7 +15,6 @@ export function useFileUpload({ getToken, onSuccess, onError }: UseFileUploadPro
   const [error, setError] = useState<string | null>(null)
   const [copiedShare, setCopiedShare] = useState(false)
   const [copiedDirect, setCopiedDirect] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Request notification permission on mount
@@ -135,9 +134,7 @@ export function useFileUpload({ getToken, onSuccess, onError }: UseFileUploadPro
     error,
     copiedShare,
     copiedDirect,
-    isDragging,
     fileInputRef,
-    setIsDragging,
     isImage,
     isVideo,
     handleFileChange,
