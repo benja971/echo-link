@@ -1,11 +1,13 @@
 import { v4 as uuidv4 } from 'uuid';
 import { query } from '../db/pool';
+import { createAccount, getOrCreateAccountForEmail, Account } from './accountService';
 
 // Upload Identity Types
 export type UploadIdentityKind = 'web_user' | 'discord_user';
 
 export interface UploadIdentity {
   id: string;
+  account_id: string;
   kind: UploadIdentityKind;
   external_id: string;
   display_name: string | null;
@@ -20,7 +22,7 @@ export interface DiscordIdentityMetadata {
   discriminator?: string;
 }
 
-// Get or create an upload identity
+// Get or create an upload identity with automatic account creation/linking
 export async function getOrCreateUploadIdentity(
   kind: UploadIdentityKind,
   externalId: string,
@@ -38,32 +40,48 @@ export async function getOrCreateUploadIdentity(
     return existing;
   }
 
-  // Create new identity
-  return createUploadIdentity(kind, externalId, displayName, extraMetadata);
+  // Determine email for account creation
+  let email: string | undefined;
+  if (kind === 'web_user' && displayName && displayName.includes('@')) {
+    email = displayName;
+  }
+
+  // Get or create account
+  let account: Account;
+  if (email) {
+    account = await getOrCreateAccountForEmail(email);
+  } else {
+    // Create a new account without email (Discord user or unknown source)
+    account = await createAccount();
+  }
+
+  // Create new identity linked to the account
+  return createUploadIdentity(kind, externalId, account.id, displayName, extraMetadata);
 }
 
 export async function createUploadIdentity(
   kind: UploadIdentityKind,
   externalId: string,
+  accountId: string,
   displayName?: string,
   extraMetadata?: Record<string, any>
 ): Promise<UploadIdentity> {
   const id = uuidv4();
 
   const result = await query(
-    `INSERT INTO upload_identities (id, kind, external_id, display_name, extra_metadata, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-     RETURNING id, kind, external_id, display_name, extra_metadata, created_at, updated_at`,
-    [id, kind, externalId, displayName || null, extraMetadata ? JSON.stringify(extraMetadata) : null]
+    `INSERT INTO upload_identities (id, account_id, kind, external_id, display_name, extra_metadata, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+     RETURNING id, account_id, kind, external_id, display_name, extra_metadata, created_at, updated_at`,
+    [id, accountId, kind, externalId, displayName || null, extraMetadata ? JSON.stringify(extraMetadata) : null]
   );
 
-  console.log(`Upload identity created: ${kind}/${externalId} (${id})`);
+  console.log(`Upload identity created: ${kind}/${externalId} (${id}) linked to account ${accountId}`);
   return result.rows[0];
 }
 
 export async function getUploadIdentityById(id: string): Promise<UploadIdentity | null> {
   const result = await query(
-    `SELECT id, kind, external_id, display_name, extra_metadata, created_at, updated_at
+    `SELECT id, account_id, kind, external_id, display_name, extra_metadata, created_at, updated_at
      FROM upload_identities
      WHERE id = $1`,
     [id]
@@ -81,7 +99,7 @@ export async function getUploadIdentityByKindAndExternalId(
   externalId: string
 ): Promise<UploadIdentity | null> {
   const result = await query(
-    `SELECT id, kind, external_id, display_name, extra_metadata, created_at, updated_at
+    `SELECT id, account_id, kind, external_id, display_name, extra_metadata, created_at, updated_at
      FROM upload_identities
      WHERE kind = $1 AND external_id = $2`,
     [kind, externalId]
@@ -119,7 +137,7 @@ export async function updateUploadIdentity(
     `UPDATE upload_identities
      SET ${updates.join(', ')}
      WHERE id = $1
-     RETURNING id, kind, external_id, display_name, extra_metadata, created_at, updated_at`,
+     RETURNING id, account_id, kind, external_id, display_name, extra_metadata, created_at, updated_at`,
     params
   );
 
@@ -156,4 +174,22 @@ export async function getUploadIdentityStats(identityId: string): Promise<Upload
     files_last_24h: row.files_last_24h,
     bytes_last_24h: Number(row.bytes_last_24h),
   };
+}
+
+/**
+ * Delete an upload identity (unlink from account)
+ * Files uploaded by this identity remain linked to the account
+ */
+export async function deleteUploadIdentity(identityId: string): Promise<boolean> {
+  const result = await query(
+    `DELETE FROM upload_identities WHERE id = $1 RETURNING id`,
+    [identityId]
+  );
+
+  if (result.rowCount && result.rowCount > 0) {
+    console.log(`Upload identity deleted: ${identityId}`);
+    return true;
+  }
+
+  return false;
 }

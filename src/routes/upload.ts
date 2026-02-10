@@ -11,6 +11,7 @@ import { queueThumbnailGeneration } from '../services/thumbnailService';
 import { getOrCreateUploadIdentity, UploadIdentity } from '../services/uploadIdentityService';
 import { assertUploadAllowed } from '../services/uploadLimitsService';
 import { checkUserQuota, getUserByUploadToken } from '../services/userService';
+import { Account, getAccountById } from '../services/accountService';
 
 // Extend Express Request type
 declare global {
@@ -18,6 +19,7 @@ declare global {
     interface Request {
       user?: any;
       uploadIdentity?: UploadIdentity;
+      account?: Account;
     }
   }
 }
@@ -102,7 +104,16 @@ async function authenticateUpload(req: Request, res: Response, next: Function): 
     );
 
     req.uploadIdentity = uploadIdentity;
-    console.log(`Discord bot auth: user ${discordUserId} (${discordUserName || 'unknown'})`);
+    
+    // Fetch account from identity
+    if (uploadIdentity.account_id) {
+      const account = await getAccountById(uploadIdentity.account_id);
+      if (account) {
+        req.account = account;
+      }
+    }
+    
+    console.log(`Discord bot auth: user ${discordUserId} (${discordUserName || 'unknown'}), account ${uploadIdentity.account_id}`);
     next();
     return;
   }
@@ -120,6 +131,15 @@ async function authenticateUpload(req: Request, res: Response, next: Function): 
     );
 
     req.uploadIdentity = uploadIdentity;
+    
+    // Fetch account from identity
+    if (uploadIdentity.account_id) {
+      const account = await getAccountById(uploadIdentity.account_id);
+      if (account) {
+        req.account = account;
+      }
+    }
+    
     next();
     return;
   }
@@ -208,6 +228,7 @@ router.post('/', authenticateUpload, upload.single('file'), async (req: Request,
       sizeBytes: req.file.size,
       userId: user?.id,
       uploadIdentityId: uploadIdentity.id,
+      accountId: uploadIdentity.account_id,
       title: originalFilename,
       width,
       height,

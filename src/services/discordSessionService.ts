@@ -85,8 +85,9 @@ export async function getDiscordUploadSessionByToken(
 ): Promise<SessionWithIdentity | null> {
   const result = await query(
     `SELECT s.*, 
-            i.id as identity_id, i.kind as identity_kind, i.external_id as identity_external_id,
-            i.display_name as identity_display_name, i.extra_metadata as identity_extra_metadata,
+            i.id as identity_id, i.account_id as identity_account_id, i.kind as identity_kind, 
+            i.external_id as identity_external_id, i.display_name as identity_display_name, 
+            i.extra_metadata as identity_extra_metadata,
             i.created_at as identity_created_at, i.updated_at as identity_updated_at
      FROM discord_upload_sessions s
      JOIN upload_identities i ON s.upload_identity_id = i.id
@@ -119,6 +120,7 @@ export async function getDiscordUploadSessionByToken(
 
   const identity: UploadIdentity = {
     id: row.identity_id,
+    account_id: row.identity_account_id,
     kind: row.identity_kind,
     external_id: row.identity_external_id,
     display_name: row.identity_display_name,

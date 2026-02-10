@@ -7,6 +7,7 @@ import deleteRouter from './routes/delete';
 import discordRouter from './routes/discord';
 import filesRouter from './routes/files';
 import healthRouter from './routes/health';
+import meRouter from './routes/me';
 import publicRouter from './routes/public';
 import statsRouter from './routes/stats';
 import uploadRouter from './routes/upload';
@@ -27,6 +28,7 @@ app.use('/stats', statsRouter);
 app.use('/cleanup', cleanupRouter);
 app.use('/delete', deleteRouter);
 app.use('/discord', discordRouter);
+app.use('/me', meRouter);
 
 // Serve static files from public directory (for images at root)
 app.use(express.static('public', { index: false }));
