@@ -39,7 +39,19 @@ router.get('/:path(*)', async (req: Request, res: Response): Promise<void> => {
     const stream = await getS3Object(file.s3_key);
 
     // Set appropriate headers
-    res.setHeader('Content-Type', file.mime_type);
+    const isMedia = file.mime_type.startsWith('image/') || file.mime_type.startsWith('video/');
+
+    if (isMedia) {
+      // Images and videos: serve inline for embeds, but sandbox to block JS (e.g. SVG scripts)
+      res.setHeader('Content-Type', file.mime_type);
+      res.setHeader('Content-Disposition', 'inline');
+      res.setHeader('Content-Security-Policy', 'sandbox');
+    } else {
+      // Everything else: force download to prevent browser execution
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.title || 'download')}"`);
+    }
+
     res.setHeader('Content-Length', file.size_bytes);
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable'); // Cache for 1 year
     res.setHeader('Accept-Ranges', 'bytes'); // Enable range requests for video seeking
