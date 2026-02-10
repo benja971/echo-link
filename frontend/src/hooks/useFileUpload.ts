@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { UploadResponse } from '@/types'
 
 interface UseFileUploadProps {
@@ -17,6 +17,13 @@ export function useFileUpload({ getToken, onSuccess, onError }: UseFileUploadPro
   const [copiedDirect, setCopiedDirect] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Request notification permission on mount
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+  }, [])
 
   const isImage = (file: File) => file.type.startsWith('image/')
   const isVideo = (file: File) => file.type.startsWith('video/')
@@ -87,8 +94,16 @@ export function useFileUpload({ getToken, onSuccess, onError }: UseFileUploadPro
       }
 
       setResult(data)
+      copyToClipboard(data.shareUrl, 'share')
       clearFile()
       if (onSuccess) onSuccess()
+
+      // Browser notification if tab is in background
+      if (document.hidden && Notification.permission === 'granted') {
+        new Notification('Echo-Link', {
+          body: `Fichier uploadé : ${file.name}`,
+        })
+      }
     } catch (e) {
       setError('Erreur réseau ou serveur.')
       if (onError) onError()

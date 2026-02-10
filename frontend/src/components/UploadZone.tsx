@@ -5,12 +5,8 @@ import type { RefObject } from 'react'
 
 interface UploadZoneProps {
   file: File | null
-  isDragging: boolean
   isUploading: boolean
   fileInputRef: RefObject<HTMLInputElement | null>
-  onDragOver: (e: React.DragEvent) => void
-  onDragLeave: (e: React.DragEvent) => void
-  onDrop: (e: React.DragEvent) => void
   onClick: () => void
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   onUpload: () => void
@@ -18,12 +14,8 @@ interface UploadZoneProps {
 
 export function UploadZone({
   file,
-  isDragging,
   isUploading,
   fileInputRef,
-  onDragOver,
-  onDragLeave,
-  onDrop,
   onClick,
   onInputChange,
   onUpload
@@ -35,33 +27,19 @@ export function UploadZone({
         <Label className="text-sm font-medium">Fichier à partager</Label>
 
         <div
-          onDragOver={onDragOver}
-          onDragLeave={onDragLeave}
-          onDrop={onDrop}
           onClick={onClick}
-          className={`
-            onboarding-upload-zone
-            relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
-            transition-all duration-200 ease-in-out
-            ${isDragging
-              ? 'border-primary bg-primary/10 scale-[1.02]'
-              : 'border-border hover:border-primary/50 hover:bg-secondary/50'
-            }
-          `}
+          className="onboarding-upload-zone relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200 ease-in-out border-border hover:border-primary/50 hover:bg-secondary/50"
         >
           <div className="flex flex-col items-center gap-3">
-            <div className={`
-              p-4 rounded-full transition-all duration-200
-              ${isDragging ? 'bg-primary/20' : 'bg-secondary'}
-            `}>
-              <Upload className={`h-8 w-8 ${isDragging ? 'text-primary' : 'text-muted-foreground'}`} />
+            <div className="p-4 rounded-full transition-all duration-200 bg-secondary">
+              <Upload className="h-8 w-8 text-muted-foreground" />
             </div>
             <div>
               <p className="text-sm font-medium mb-1">
                 {file ? 'Changer de fichier' : 'Glissez-déposez votre fichier ici'}
               </p>
               <p className="text-xs text-muted-foreground">
-                ou cliquez pour parcourir vos fichiers
+                ou cliquez pour parcourir vos fichiers (Ctrl+V pour coller)
               </p>
             </div>
           </div>

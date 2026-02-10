@@ -16,7 +16,7 @@ export function UploadResults({ result, copiedShare, copiedDirect, onCopy }: Upl
     <div className="space-y-4 p-5 rounded-lg bg-primary/5 border-2 border-primary/20 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div className="flex items-center gap-2 mb-2">
         <Check className="h-5 w-5 text-primary" />
-        <p className="font-semibold text-primary">Fichier uploadé avec succès !</p>
+        <p className="font-semibold text-primary">Fichier uploadé — lien copié !</p>
       </div>
 
       <div className="space-y-3">

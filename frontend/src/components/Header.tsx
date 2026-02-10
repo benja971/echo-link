@@ -1,4 +1,4 @@
-import { Link2, BarChart3, LogOut, Grid } from 'lucide-react'
+import { Link2, BarChart3, LogOut, Grid, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
@@ -6,8 +6,10 @@ interface HeaderProps {
   email: string
   showGallery: boolean
   showStats: boolean
+  hasDiscordLinked?: boolean
   onToggleGallery: () => void
   onToggleStats: () => void
+  onOpenAccountLink: () => void
   onLogout: () => void
 }
 
@@ -15,8 +17,10 @@ export function Header({
   email,
   showGallery,
   showStats,
+  hasDiscordLinked,
   onToggleGallery,
   onToggleStats,
+  onOpenAccountLink,
   onLogout
 }: HeaderProps) {
   return (
@@ -36,6 +40,15 @@ export function Header({
           </div>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onOpenAccountLink}
+            title="Mon compte"
+            className={hasDiscordLinked ? '' : 'text-[#5865F2] hover:text-[#5865F2] hover:bg-[#5865F2]/10'}
+          >
+            <UserPlus className="h-5 w-5" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"

@@ -52,5 +52,24 @@ export interface GlobalStats {
 export type AuthState = 'checking' | 'unauthenticated' | 'waiting_email' | 'authenticated' | 'discord_session'
 export type StatsTab = 'user' | 'global'
 
+export interface DiscordIdentity {
+  id: string
+  displayName: string | null
+  externalId: string
+  createdAt: string
+}
+
+export interface DiscordLinkStatus {
+  hasDiscordLinked: boolean
+  discordIdentities: DiscordIdentity[]
+  pendingRequests: { code: string; expiresAt: string }[]
+}
+
+export interface DiscordLinkRequest {
+  code: string
+  expiresAt: string
+  instructions: string
+}
+
 export const TOKEN_KEY = 'echolink_upload_token'
 export const ONBOARDING_KEY = 'echolink_onboarding_completed'
