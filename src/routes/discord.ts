@@ -14,6 +14,7 @@ import {
   isSessionValid,
 } from '../services/discordSessionService';
 import { createFileRecord } from '../services/fileService';
+import { validateFileType } from '../services/fileValidationService';
 import { getPublicUrl, uploadBuffer } from '../services/s3Service';
 import { queueThumbnailGeneration } from '../services/thumbnailService';
 import { assertUploadAllowed } from '../services/uploadLimitsService';
@@ -276,6 +277,13 @@ router.post('/upload/:token', upload.single('file'), async (req: Request, res: R
       return;
     }
 
+    // Validate file type via magic bytes before anything else
+    const fileValidation = await validateFileType(req.file.buffer, req.file.mimetype);
+    if (!fileValidation.allowed) {
+      res.status(415).json({ error: 'invalid_file_type', message: fileValidation.reason });
+      return;
+    }
+
     const identity = session.identity;
 
     // Check upload limits
@@ -289,8 +297,9 @@ router.post('/upload/:token', upload.single('file'), async (req: Request, res: R
     const id = uuidv4();
     const originalFilename = fixFilenameEncoding(req.file.originalname);
     const originalExt = path.extname(originalFilename);
-    const isVideo = req.file.mimetype.startsWith('video/');
-    const isImage = req.file.mimetype.startsWith('image/');
+    const contentType = fileValidation.detectedMime;
+    const isVideo = contentType.startsWith('video/');
+    const isImage = contentType.startsWith('image/');
     const folder = isVideo ? 'videos' : 'files';
     const key = `${folder}/${id}${originalExt}`;
 
@@ -314,7 +323,7 @@ router.post('/upload/:token', upload.single('file'), async (req: Request, res: R
     await uploadBuffer({
       key,
       buffer: req.file.buffer,
-      contentType: req.file.mimetype,
+      contentType,
     });
 
     // Calculate expiration
@@ -325,7 +334,7 @@ router.post('/upload/:token', upload.single('file'), async (req: Request, res: R
     await createFileRecord({
       id,
       key,
-      mimeType: req.file.mimetype,
+      mimeType: contentType,
       sizeBytes: req.file.size,
       uploadIdentityId: identity.id,
       accountId: identity.account_id,
@@ -343,7 +352,7 @@ router.post('/upload/:token', upload.single('file'), async (req: Request, res: R
 
     // Queue thumbnail generation for videos
     if (isVideo) {
-      queueThumbnailGeneration(req.file.buffer, id, req.file.mimetype);
+      queueThumbnailGeneration(req.file.buffer, id, contentType);
     }
 
     // Send ephemeral notification to Discord with buttons

@@ -6,6 +6,7 @@ import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
 import { config } from '../config';
 import { createFileRecord } from '../services/fileService';
+import { validateFileType } from '../services/fileValidationService';
 import { getPublicUrl, uploadBuffer } from '../services/s3Service';
 import { queueThumbnailGeneration } from '../services/thumbnailService';
 import { getOrCreateUploadIdentity, UploadIdentity } from '../services/uploadIdentityService';
@@ -159,13 +160,21 @@ router.post('/', authenticateUpload, upload.single('file'), async (req: Request,
       return;
     }
 
+    // Validate file type via magic bytes before anything else
+    const fileValidation = await validateFileType(req.file.buffer, req.file.mimetype);
+    if (!fileValidation.allowed) {
+      res.status(415).json({ error: 'invalid_file_type', message: fileValidation.reason });
+      return;
+    }
+
     const user = req.user;
     const uploadIdentity = req.uploadIdentity;
     const id = uuidv4();
     const originalFilename = fixFilenameEncoding(req.file.originalname);
     const originalExt = path.extname(originalFilename);
-    const isVideo = req.file.mimetype.startsWith('video/');
-    const isImage = req.file.mimetype.startsWith('image/');
+    const contentType = fileValidation.detectedMime;
+    const isVideo = contentType.startsWith('video/');
+    const isImage = contentType.startsWith('image/');
     const folder = isVideo ? 'videos' : 'files';
     const key = `${folder}/${id}${originalExt}`;
 
@@ -214,7 +223,7 @@ router.post('/', authenticateUpload, upload.single('file'), async (req: Request,
     await uploadBuffer({
       key,
       buffer: req.file.buffer,
-      contentType: req.file.mimetype,
+      contentType,
     });
 
     // Calculate expiration date
@@ -224,7 +233,7 @@ router.post('/', authenticateUpload, upload.single('file'), async (req: Request,
     await createFileRecord({
       id,
       key,
-      mimeType: req.file.mimetype,
+      mimeType: contentType,
       sizeBytes: req.file.size,
       userId: user?.id,
       uploadIdentityId: uploadIdentity.id,
@@ -240,7 +249,7 @@ router.post('/', authenticateUpload, upload.single('file'), async (req: Request,
 
     // Queue async thumbnail generation for videos (non-blocking)
     if (isVideo) {
-      queueThumbnailGeneration(req.file.buffer, id, req.file.mimetype);
+      queueThumbnailGeneration(req.file.buffer, id, contentType);
     }
 
     res.status(200).json({
