@@ -27,9 +27,8 @@ export async function assertUploadAllowed(
   const accountId = identity.account_id;
   
   if (!accountId) {
-    // Fallback: if no account_id (shouldn't happen for new records), allow upload
-    console.warn(`Identity ${identity.id} has no account_id, allowing upload without quota check`);
-    return { allowed: true };
+    console.warn(`Identity ${identity.id} has no account_id, blocking upload`);
+    return { allowed: false, reason: 'Account not found. Please re-authenticate.' };
   }
 
   const stats = await getAccountStats(accountId);
