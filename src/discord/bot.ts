@@ -24,22 +24,38 @@ interface EchoLinkErrorResponse {
   message?: string;
 }
 
+interface EchoLinkLinkResponse {
+  status: 'linked' | 'already_linked' | 'merged';
+  accountId: string;
+  message: string;
+}
+
 // Discord bot client
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 });
 
-// Slash command definition (no attachment required anymore)
+// Slash command definitions
 const uploadCommand = new SlashCommandBuilder()
   .setName('upload')
   .setDescription('Obtenir un lien pour uploader un fichier volumineux vers Echo-Link');
+
+const linkCommand = new SlashCommandBuilder()
+  .setName('link')
+  .setDescription('Lier ton compte Discord à ton compte Echo-Link')
+  .addStringOption(option =>
+    option
+      .setName('code')
+      .setDescription('Le code de liaison obtenu depuis le site Echo-Link')
+      .setRequired(true)
+  );
 
 // Register slash commands
 async function registerCommands() {
   const rest = new REST({ version: '10' }).setToken(botConfig.discordToken);
 
   try {
-    const commands = [uploadCommand.toJSON()];
+    const commands = [uploadCommand.toJSON(), linkCommand.toJSON()];
 
     if (botConfig.discordGuildId) {
       // Guild commands (instant, for development)
@@ -172,6 +188,79 @@ async function handleUploadCommand(interaction: ChatInputCommandInteraction) {
   }
 }
 
+// Link Discord account to Echo-Link account
+async function linkDiscordAccount(
+  userId: string,
+  userName: string,
+  guildId: string | null,
+  code: string
+): Promise<EchoLinkLinkResponse> {
+  console.log(`🔗 Linking Discord user ${userId} with code ${code}`);
+
+  const response = await fetch(`${botConfig.echolinkBaseUrl}/discord/link`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${botConfig.echolinkBotToken}`,
+      'Content-Type': 'application/json',
+      'X-Discord-User-Id': userId,
+      'X-Discord-User-Name': userName,
+      'X-Discord-Guild-Id': guildId || '',
+    },
+    body: JSON.stringify({ code }),
+  });
+
+  const responseData = await response.json();
+
+  if (!response.ok) {
+    const errorData = responseData as EchoLinkErrorResponse;
+    throw new SessionError(
+      response.status,
+      errorData.error,
+      errorData.message || 'Failed to link account'
+    );
+  }
+
+  return responseData as EchoLinkLinkResponse;
+}
+
+// Handle link command
+async function handleLinkCommand(interaction: ChatInputCommandInteraction) {
+  // Defer reply (ephemeral)
+  await interaction.deferReply({ flags: ['Ephemeral'] });
+
+  try {
+    const code = interaction.options.getString('code', true);
+
+    const result = await linkDiscordAccount(
+      interaction.user.id,
+      interaction.user.username,
+      interaction.guildId,
+      code
+    );
+
+    console.log(`✅ Link successful: ${result.status}`);
+
+    // Get emoji based on status
+    const emoji = result.status === 'merged' ? '🔀' : '✅';
+
+    await interaction.editReply({
+      content: `${emoji} **Liaison réussie !**\n\n${result.message}`,
+    });
+  } catch (error) {
+    console.error('❌ Failed to link account:', error);
+
+    if (error instanceof SessionError) {
+      await interaction.editReply({
+        content: `❌ **Erreur de liaison**\n\n${error.message}`,
+      });
+    } else {
+      await interaction.editReply({
+        content: `❌ **Erreur inattendue**\n\nUn problème est survenu. Réessaie plus tard.`,
+      });
+    }
+  }
+}
+
 // Event handlers
 client.once(Events.ClientReady, (readyClient) => {
   console.log(`🤖 Discord bot logged in as ${readyClient.user.tag}`);
@@ -183,6 +272,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.isChatInputCommand()) {
     if (interaction.commandName === 'upload') {
       await handleUploadCommand(interaction);
+    } else if (interaction.commandName === 'link') {
+      await handleLinkCommand(interaction);
     }
     return;
   }

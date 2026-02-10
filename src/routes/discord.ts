@@ -5,6 +5,7 @@ import path from 'path';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
 import { config } from '../config';
+import { LinkError, linkDiscordToAccount } from '../services/discordLinkService';
 import { sendUploadCompletionMessage } from '../services/discordNotificationService';
 import {
   completeDiscordUploadSession,
@@ -108,6 +109,85 @@ router.post('/upload-session', async (req: Request, res: Response): Promise<void
     res.status(500).json({ error: 'server_error' });
   }
 });
+
+/**
+ * POST /discord/link
+ * Called by the Discord bot to link a Discord account to an Echo-Link account using a code
+ */
+router.post('/link', async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Authenticate bot
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({ error: 'unauthorized' });
+      return;
+    }
+
+    const token = authHeader.substring(7);
+    if (!config.discordBot.botToken || !safeCompare(token, config.discordBot.botToken)) {
+      res.status(401).json({ error: 'unauthorized', message: 'Invalid bot token' });
+      return;
+    }
+
+    // Check required headers
+    const discordUserId = req.headers['x-discord-user-id'] as string | undefined;
+    const discordUserName = req.headers['x-discord-user-name'] as string | undefined;
+    const discordGuildId = req.headers['x-discord-guild-id'] as string | undefined;
+
+    if (!discordUserId) {
+      res.status(400).json({ error: 'missing_header', message: 'X-Discord-User-Id required' });
+      return;
+    }
+
+    // Get code from body
+    const { code } = req.body;
+
+    if (!code || typeof code !== 'string') {
+      res.status(400).json({ error: 'missing_code', message: 'Code is required' });
+      return;
+    }
+
+    // Link the Discord account
+    const result = await linkDiscordToAccount(
+      code,
+      discordUserId,
+      discordUserName,
+      discordGuildId
+    );
+
+    res.status(200).json({
+      status: result.status,
+      accountId: result.accountId,
+      message: getSuccessMessage(result.status),
+    });
+  } catch (error) {
+    console.error('Failed to link Discord account:', error);
+
+    if (error instanceof LinkError) {
+      res.status(400).json({
+        error: error.code,
+        message: error.message,
+      });
+      return;
+    }
+
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+/**
+ * Get success message based on link status
+ */
+function getSuccessMessage(status: 'linked' | 'already_linked' | 'merged'): string {
+  switch (status) {
+    case 'linked':
+      return 'Ton compte Discord est maintenant lié à ton compte Echo-Link. Les fichiers envoyés via Discord et via le site partageront désormais les mêmes limites et apparaîtront dans la même liste.';
+    case 'already_linked':
+      return 'Ton compte Discord est déjà lié à ce compte Echo-Link.';
+    case 'merged':
+      return 'Ton compte Discord a été fusionné avec ton compte Echo-Link. Tous tes fichiers précédents ont été transférés.';
+  }
+}
 
 /**
  * GET /discord/upload/:token
@@ -241,13 +321,14 @@ router.post('/upload/:token', upload.single('file'), async (req: Request, res: R
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + config.files.expirationDays);
 
-    // Create file record
+    // Create file record (include account_id from identity for unified quota/stats)
     await createFileRecord({
       id,
       key,
       mimeType: req.file.mimetype,
       sizeBytes: req.file.size,
       uploadIdentityId: identity.id,
+      accountId: identity.account_id,
       title: originalFilename,
       width,
       height,
