@@ -21,6 +21,14 @@
   let uploadError = $state<string | null>(null);
   let paletteOpen = $state(false);
   let preview = $state<typeof data.files[number] | null>(null);
+
+  const filesPct = $derived(
+    Math.min(100, Math.round((data.stats.fileCount / data.limits.maxFiles) * 100))
+  );
+  const bytesPct = $derived(
+    Math.min(100, Math.round((data.stats.totalBytes / data.limits.maxBytes) * 100))
+  );
+  const usagePct = $derived(Math.max(filesPct, bytesPct));
   let recent = $derived(data.files.slice(0, 3));
   let allFiles = $derived(data.files);
 
@@ -91,9 +99,29 @@
   </header>
 
   <section class="px-6 pt-8 text-center">
-    <div class="inline-flex gap-1.5 font-mono text-xs text-overlay1 tracking-wide">
-      <span class="rounded-full bg-surface0 px-2.5 py-1"><strong class="text-text">{data.stats.fileCount}</strong> files</span>
-      <span class="rounded-full bg-surface0 px-2.5 py-1"><strong class="text-text">{formatFileSize(data.stats.totalBytes)}</strong></span>
+    <div class="inline-flex flex-wrap items-center justify-center gap-1.5 font-mono text-xs text-overlay1 tracking-wide">
+      <span class="rounded-full bg-surface0 px-2.5 py-1">
+        <strong class="text-text">{data.stats.fileCount}</strong>
+        <span class="text-overlay0">/{data.limits.maxFiles}</span> files
+      </span>
+      <span class="rounded-full bg-surface0 px-2.5 py-1">
+        <strong class="text-text">{formatFileSize(data.stats.totalBytes)}</strong>
+        <span class="text-overlay0">/ {formatFileSize(data.limits.maxBytes)}</span>
+      </span>
+      <span
+        class="relative inline-flex items-center gap-1.5 overflow-hidden rounded-full bg-surface0 px-2.5 py-1"
+        title="usage = max(files used, storage used)"
+      >
+        <span
+          class="absolute inset-y-0 left-0 transition-[width] duration-500 [transition-timing-function:var(--ease-out-expo)]"
+          style:width="{usagePct}%"
+          style:background-color="color-mix(in oklab, var(--color-accent) 22%, transparent)"
+        ></span>
+        <span class="relative">
+          <strong class="text-text">{usagePct}%</strong>
+          <span class="text-overlay0">used</span>
+        </span>
+      </span>
     </div>
   </section>
 
