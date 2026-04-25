@@ -5,6 +5,7 @@
   import FileRow from '$components/FileRow.svelte';
   import FileGrid from '$components/FileGrid.svelte';
   import CommandPalette from '$components/CommandPalette.svelte';
+  import FilePreviewModal from '$components/FilePreviewModal.svelte';
   import { formatFileSize } from '$lib/utils/format';
   import { useDropAnywhere } from '$lib/hooks/useDropAnywhere.svelte';
   import { useShortcuts } from '$lib/hooks/useShortcuts.svelte';
@@ -19,6 +20,7 @@
   let busy = $state(false);
   let uploadError = $state<string | null>(null);
   let paletteOpen = $state(false);
+  let preview = $state<typeof data.files[number] | null>(null);
   let recent = $derived(data.files.slice(0, 3));
   let allFiles = $derived(data.files);
 
@@ -122,7 +124,7 @@
     <div class="mb-3 flex items-baseline justify-between font-mono text-xs text-subtext0">
       <span>all files <span class="text-overlay0">({allFiles.length})</span></span>
     </div>
-    <FileGrid files={allFiles} />
+    <FileGrid files={allFiles} onSelect={(f) => (preview = f)} />
   </section>
 </div>
 
@@ -140,6 +142,8 @@
   onCopyLast={copyLast}
   onSignOut={signOut}
 />
+
+<FilePreviewModal file={preview} onClose={() => (preview = null)} />
 
 <!-- sticky tip ticker — terminal-status-bar vibe -->
 <div class="fixed inset-x-0 bottom-0 z-30 border-t border-surface0 bg-mantle/85 px-4 py-2.5 text-center backdrop-blur">
