@@ -28,13 +28,9 @@
   data-pick-trigger
   onclick={pick}
   disabled={busy}
-  class="group relative w-full rounded-xl border-2 border-dashed border-surface2 bg-mantle px-8 py-12 text-center transition-all duration-200 [transition-timing-function:var(--ease-out-expo)] hover:-translate-y-0.5 hover:border-mauve focus-visible:outline-none focus-visible:border-mauve disabled:opacity-60"
+  class="group relative block w-full cursor-pointer rounded-xl border border-dashed border-surface1 bg-mantle px-8 py-12 text-center transition-colors duration-150 [transition-timing-function:var(--ease-out-expo)] hover:border-mauve hover:bg-base focus-visible:border-mauve focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
 >
-  <span
-    class="pointer-events-none absolute inset-0 rounded-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-    style="background: radial-gradient(circle at 50% 0%, color-mix(in oklab, var(--color-mauve) 18%, transparent) 0%, transparent 60%);"
-  ></span>
-  <div class="font-mono text-3xl text-mauve" style="animation: float 3.2s ease-in-out infinite;">[ + ]</div>
+  <div class="font-mono text-3xl text-mauve transition-transform duration-150 group-hover:scale-105">[ + ]</div>
   <div class="mt-3 font-mono text-base text-text">{title}</div>
   <div class="mt-1 font-mono text-xs text-overlay1">{sub}</div>
   {#if anonTag}
