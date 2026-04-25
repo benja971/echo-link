@@ -39,12 +39,12 @@
   --color-lavender: #b4befe;
 
   /* user-customizable accent — overridden by [data-accent] selectors below */
-  --color-accent: var(--color-accent);
+  --color-accent: var(--color-mauve);
 
   --ease-out-expo: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-[data-accent="mauve"]    { --color-accent: var(--color-accent); }
+[data-accent="mauve"]    { --color-accent: var(--color-mauve); }
 [data-accent="peach"]    { --color-accent: var(--color-peach); }
 [data-accent="sky"]      { --color-accent: var(--color-sky); }
 [data-accent="teal"]     { --color-accent: var(--color-teal); }
