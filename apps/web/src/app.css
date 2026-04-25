@@ -38,8 +38,22 @@
   --color-blue: #89b4fa;
   --color-lavender: #b4befe;
 
+  /* user-customizable accent — overridden by [data-accent] selectors below */
+  --color-accent: var(--color-accent);
+
   --ease-out-expo: cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+[data-accent="mauve"]    { --color-accent: var(--color-accent); }
+[data-accent="peach"]    { --color-accent: var(--color-peach); }
+[data-accent="sky"]      { --color-accent: var(--color-sky); }
+[data-accent="teal"]     { --color-accent: var(--color-teal); }
+[data-accent="green"]    { --color-accent: var(--color-green); }
+[data-accent="yellow"]   { --color-accent: var(--color-yellow); }
+[data-accent="lavender"] { --color-accent: var(--color-lavender); }
+[data-accent="red"]      { --color-accent: var(--color-red); }
+[data-accent="pink"]     { --color-accent: var(--color-pink); }
+[data-accent="blue"]     { --color-accent: var(--color-blue); }
 
 [data-theme="latte"] {
   --color-base: #eff1f5;
@@ -82,7 +96,7 @@ html, body {
 
 body {
   background-image:
-    radial-gradient(circle at 50% 0%, color-mix(in oklab, var(--color-mauve) 8%, transparent) 0%, transparent 60%),
+    radial-gradient(circle at 50% 0%, color-mix(in oklab, var(--color-accent) 8%, transparent) 0%, transparent 60%),
     radial-gradient(circle at 100% 100%, color-mix(in oklab, var(--color-sky) 5%, transparent) 0%, transparent 50%);
   background-attachment: fixed;
   min-height: 100dvh;
@@ -99,8 +113,8 @@ body::before {
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 32px var(--color-mauve), 0 0 8px var(--color-mauve); transform: scale(1); }
-  50%      { box-shadow: 0 0 48px var(--color-mauve), 0 0 16px var(--color-mauve); transform: scale(1.1); }
+  0%, 100% { box-shadow: 0 0 32px var(--color-accent), 0 0 8px var(--color-accent); transform: scale(1); }
+  50%      { box-shadow: 0 0 48px var(--color-accent), 0 0 16px var(--color-accent); transform: scale(1.1); }
 }
 
 @keyframes float {

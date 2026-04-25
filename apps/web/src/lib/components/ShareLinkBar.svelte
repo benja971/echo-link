@@ -13,14 +13,14 @@
 </script>
 
 <div class="flex items-center gap-4 border-t border-surface0 bg-crust px-6 py-4 font-mono text-sm">
-  <button onclick={copy} class="flex-1 text-left text-text hover:text-mauve">
-    <span class="text-overlay1">{new URL(url).host}/v/</span><span class="text-mauve">{new URL(url).pathname.split('/').pop()}</span>
+  <button onclick={copy} class="flex-1 text-left text-text hover:text-accent">
+    <span class="text-overlay1">{new URL(url).host}/v/</span><span class="text-accent">{new URL(url).pathname.split('/').pop()}</span>
   </button>
   <div class="flex gap-1 text-overlay1">
     {#each variants as v}
       <button
         onclick={() => (active = v)}
-        class="rounded border border-surface1 px-2 py-0.5 text-[10px] uppercase tracking-wide transition-colors {active === v ? 'border-mauve bg-surface0 text-mauve' : ''}"
+        class="rounded border border-surface1 px-2 py-0.5 text-[10px] uppercase tracking-wide transition-colors {active === v ? 'border-accent bg-surface0 text-accent' : ''}"
       >
         {v}
       </button>

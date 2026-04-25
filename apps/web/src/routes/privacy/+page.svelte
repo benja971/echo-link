@@ -11,11 +11,11 @@
   <a href="/" class="hover:opacity-80">
     <Brand />
   </a>
-  <a href="/" class="font-mono text-xs text-subtext0 hover:text-mauve">← back</a>
+  <a href="/" class="font-mono text-xs text-subtext0 hover:text-accent">← back</a>
 </header>
 
 <main class="mx-auto max-w-2xl px-8 py-16 font-sans text-subtext1">
-  <p class="mb-3 font-mono text-[11px] uppercase tracking-wider text-mauve">
+  <p class="mb-3 font-mono text-[11px] uppercase tracking-wider text-accent">
     → privacy
   </p>
   <h1 class="mb-10 text-4xl font-medium tracking-tight text-text">
@@ -43,7 +43,7 @@
     </p>
 
     <h2 class="mt-10 text-xl font-medium tracking-tight text-text">what we don't store</h2>
-    <ul class="ml-5 list-disc space-y-1.5 marker:text-mauve">
+    <ul class="ml-5 list-disc space-y-1.5 marker:text-accent">
       <li>your raw IP address (only a salted hash, only for anonymous uploads)</li>
       <li>browser fingerprint, device info, location</li>
       <li>any third-party cookies</li>
@@ -59,7 +59,7 @@
 
     <h2 class="mt-10 text-xl font-medium tracking-tight text-text">deletion</h2>
     <p>
-      from <a href="/app" class="text-mauve hover:underline">/app</a>, you can delete any file you
+      from <a href="/app" class="text-accent hover:underline">/app</a>, you can delete any file you
       own. the file is removed from storage and the database synchronously. there are no backups
       or soft-deletes — gone is gone.
     </p>
@@ -71,7 +71,7 @@
         href="https://github.com"
         target="_blank"
         rel="noopener noreferrer"
-        class="text-mauve hover:underline">github repo</a
+        class="text-accent hover:underline">github repo</a
       >, or just self-host it.
     </p>
   </section>
@@ -79,5 +79,5 @@
 
 <footer class="mt-24 flex flex-wrap justify-between gap-4 border-t border-surface0 px-8 py-6 font-mono text-[11px] text-overlay1">
   <span>made with ☕ &nbsp;by ben</span>
-  <a href="/" class="text-subtext0 hover:text-mauve">echo·link</a>
+  <a href="/" class="text-subtext0 hover:text-accent">echo·link</a>
 </footer>

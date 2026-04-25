@@ -10,7 +10,7 @@
 <span class="inline-flex items-baseline gap-1 font-mono font-medium text-text {sizeClass} tracking-tight">
   <span>echo</span>
   <span
-    class="inline-block shrink-0 rounded-full bg-mauve"
+    class="inline-block shrink-0 rounded-full bg-accent"
     style:width="{dotPx}px"
     style:height="{dotPx}px"
     style:animation={pulsing ? 'pulse-glow 2.4s ease-in-out infinite' : 'none'}

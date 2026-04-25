@@ -117,7 +117,7 @@
 
 {#if dnd.dragging}
   <div class="fixed inset-0 z-50 grid place-items-center bg-base/80 backdrop-blur">
-    <div class="font-mono text-xl text-mauve">[ drop to upload ]</div>
+    <div class="font-mono text-xl text-accent">[ drop to upload ]</div>
   </div>
 {/if}
 

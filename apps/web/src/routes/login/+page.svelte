@@ -33,8 +33,8 @@
   <div class="w-full max-w-sm">
     <div class="mb-8 text-center"><Brand size="md" /></div>
     {#if sent}
-      <div class="rounded-md border border-mauve/30 bg-mauve/5 p-6 text-center font-mono text-sm">
-        <div class="text-mauve">→ check your inbox</div>
+      <div class="rounded-md border border-accent/30 bg-accent/5 p-6 text-center font-mono text-sm">
+        <div class="text-accent">→ check your inbox</div>
         <div class="mt-2 text-subtext1">we sent a sign-in link to <span class="text-text">{email}</span></div>
       </div>
     {:else}
@@ -44,12 +44,12 @@
           required
           bind:value={email}
           placeholder="you@somewhere.com"
-          class="w-full rounded-md border border-surface1 bg-mantle px-4 py-3 font-mono text-sm text-text placeholder:text-overlay1 focus:border-mauve focus:outline-none"
+          class="w-full rounded-md border border-surface1 bg-mantle px-4 py-3 font-mono text-sm text-text placeholder:text-overlay1 focus:border-accent focus:outline-none"
         />
         <button
           type="submit"
           disabled={busy}
-          class="w-full rounded-md bg-mauve px-4 py-3 font-mono text-sm font-medium text-crust transition-opacity hover:opacity-90 disabled:opacity-60"
+          class="w-full rounded-md bg-accent px-4 py-3 font-mono text-sm font-medium text-crust transition-opacity hover:opacity-90 disabled:opacity-60"
         >
           {busy ? '…' : 'send magic link →'}
         </button>
