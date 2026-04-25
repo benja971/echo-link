@@ -1,4 +1,5 @@
-type Theme = 'mocha' | 'latte';
+export const THEMES = ['latte', 'frappe', 'macchiato', 'mocha'] as const;
+export type Theme = (typeof THEMES)[number];
 
 export const ACCENTS = [
   'mauve',
@@ -12,7 +13,6 @@ export const ACCENTS = [
   'pink',
   'blue'
 ] as const;
-
 export type Accent = (typeof ACCENTS)[number];
 
 class ThemeStore {
@@ -21,18 +21,33 @@ class ThemeStore {
 
   init() {
     if (typeof document === 'undefined') return;
-    const storedTheme = localStorage.getItem('theme') as Theme | null;
-    const storedAccent = localStorage.getItem('accent') as Accent | null;
-    this.current = storedTheme === 'latte' ? 'latte' : 'mocha';
-    this.accent = storedAccent && (ACCENTS as readonly string[]).includes(storedAccent) ? storedAccent : 'mauve';
+    const storedTheme = localStorage.getItem('theme');
+    const storedAccent = localStorage.getItem('accent');
+    this.current = (THEMES as readonly string[]).includes(storedTheme ?? '')
+      ? (storedTheme as Theme)
+      : 'mocha';
+    this.accent = (ACCENTS as readonly string[]).includes(storedAccent ?? '')
+      ? (storedAccent as Accent)
+      : 'mauve';
     document.documentElement.dataset.theme = this.current;
     document.documentElement.dataset.accent = this.accent;
   }
 
+  /** Cycle to next theme (used by ⌘T shortcut). */
+  cycle() {
+    const i = THEMES.indexOf(this.current);
+    this.setTheme(THEMES[(i + 1) % THEMES.length]!);
+  }
+
+  /** Back-compat alias for ⌘T. */
   toggle() {
-    this.current = this.current === 'mocha' ? 'latte' : 'mocha';
-    document.documentElement.dataset.theme = this.current;
-    localStorage.setItem('theme', this.current);
+    this.cycle();
+  }
+
+  setTheme(t: Theme) {
+    this.current = t;
+    document.documentElement.dataset.theme = t;
+    localStorage.setItem('theme', t);
   }
 
   setAccent(a: Accent) {

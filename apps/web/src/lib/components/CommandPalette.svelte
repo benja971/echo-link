@@ -1,7 +1,7 @@
 <!-- apps/web/src/lib/components/CommandPalette.svelte -->
 <script lang="ts">
   import type { File } from '@echo-link/db';
-  import { theme, ACCENTS, type Accent } from '$lib/stores/theme.svelte';
+  import { theme, ACCENTS, THEMES, type Accent, type Theme } from '$lib/stores/theme.svelte';
 
   type Action = {
     id: string;
@@ -54,12 +54,12 @@
 
   const appearanceGroup = $derived<Action[]>([
     {
-      id: 'theme',
-      label: 'switch theme',
-      badge: `${theme.current} → ${theme.current === 'mocha' ? 'latte' : 'mocha'}`,
+      id: 'theme-cycle',
+      label: 'cycle theme',
+      badge: `current: ${theme.current}`,
       icon: '◐',
       shortcut: '⌘T',
-      onSelect: () => { theme.toggle(); }
+      onSelect: () => { theme.cycle(); }
     }
   ]);
 
@@ -67,7 +67,7 @@
     { id: 'sign-out', label: 'sign out', icon: '⊘', onSelect: () => { onSignOut(); } }
   ]);
 
-  // Visual swatch hex per accent (mocha values — latte uses different hex but visual hint stays)
+  // Visual swatch hex per accent (mocha values — other flavors look similar but slightly different)
   const accentSwatches: Record<Accent, string> = {
     mauve: '#cba6f7',
     peach: '#fab387',
@@ -79,6 +79,14 @@
     red: '#f38ba8',
     pink: '#f5c2e7',
     blue: '#89b4fa'
+  };
+
+  // Each theme's `base` color, used as the swatch
+  const themeSwatches: Record<Theme, string> = {
+    latte: '#eff1f5',
+    frappe: '#303446',
+    macchiato: '#24273a',
+    mocha: '#1e1e2e'
   };
 
   type Row = { type: 'action'; data: Action } | { type: 'file'; data: File };
@@ -180,7 +188,27 @@
         </button>
       {/each}
 
-      <!-- Accent swatch picker (click-only, not in keyboard flow) -->
+      <!-- Theme + accent swatch pickers (click-only, not in keyboard flow) -->
+      <div class="grid grid-cols-[24px_1fr] items-start gap-3 px-5 py-2.5 text-sm">
+        <span class="pt-1.5 font-mono text-overlay1">◐</span>
+        <div>
+          <div class="mb-1.5 text-subtext1">flavor <span class="ml-2 font-mono text-[10px] text-overlay0">latte · frappe · macchiato · mocha</span></div>
+          <div class="flex flex-wrap gap-1.5">
+            {#each THEMES as t}
+              <button
+                type="button"
+                onclick={() => theme.setTheme(t)}
+                title={t}
+                aria-label={`set theme to ${t}`}
+                aria-pressed={theme.current === t}
+                class="group relative h-6 w-6 rounded-md border-2 transition-all hover:scale-110 {theme.current === t ? 'border-text scale-110' : 'border-surface0'}"
+                style:background-color={themeSwatches[t]}
+              ></button>
+            {/each}
+          </div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-[24px_1fr] items-start gap-3 px-5 py-2.5 text-sm">
         <span class="pt-1.5 font-mono text-overlay1">●</span>
         <div>
