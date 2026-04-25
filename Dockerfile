@@ -1,63 +1,31 @@
-FROM node:24-alpine3.20 AS builder
-
+# apps/web — SvelteKit single app on Bun runtime
+FROM oven/bun:1.1-alpine AS deps
 WORKDIR /app
+COPY package.json bun.lock ./
+COPY apps/web/package.json ./apps/web/
+COPY apps/bot/package.json ./apps/bot/
+COPY packages/db/package.json ./packages/db/
+RUN bun install --frozen-lockfile
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-# Copy dependency files
-COPY package.json pnpm-lock.yaml ./
-
-# Install production dependencies
-RUN pnpm install --prod --frozen-lockfile
-
-# Install dev dependencies for build
-RUN pnpm install -D typescript @types/node @types/express @types/multer @types/pg @types/uuid
-
-# Copy source and build backend
-COPY tsconfig.json ./
-COPY src ./src
-RUN pnpm run build
-
-# Copy frontend source and build it
-COPY frontend/package.json ./frontend/
-WORKDIR /app/frontend
-RUN pnpm install
-COPY frontend/tsconfig.json ./
-COPY frontend/vite.config.ts ./
-COPY frontend/index.html ./
-COPY frontend/postcss.config.js ./
-COPY frontend/tailwind.config.js ./
-COPY frontend/components.json ./
-COPY frontend/public ./public
-COPY frontend/src ./src
-RUN pnpm run build
-
-# Switch back to app root and copy landing page
+FROM oven/bun:1.1-alpine AS build
 WORKDIR /app
-COPY public/landing.html ./public/
-COPY public/banner.png ./public/
-COPY public/echo-link.png ./public/
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN bun --filter web build
 
-FROM node:24-alpine3.20
-
-WORKDIR /app
-
-# Install ffmpeg for video thumbnail generation
+FROM oven/bun:1.1-alpine AS runtime
 RUN apk add --no-cache ffmpeg
+WORKDIR /app
 
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/public ./public
+# SvelteKit Node adapter output
+COPY --from=build /app/apps/web/build ./build
+COPY --from=build /app/apps/web/package.json ./apps/web/package.json
 
-# Copy migrations directory (needed at runtime) - directly from build context
-COPY src/db/migrations ./dist/db/migrations
-
-ENV NODE_ENV=production
-
-USER node
+# Workspace deps + drizzle migrations needed at runtime
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/packages/db ./packages/db
+COPY --from=build /app/package.json ./package.json
 
 EXPOSE 3000
-
-CMD ["node", "dist/server.js"]
+ENV PORT=3000 HOST=0.0.0.0 NODE_ENV=production
+CMD ["bun", "build/index.js"]
