@@ -2,6 +2,7 @@
 <script lang="ts">
   import Brand from '$components/Brand.svelte';
   import Dropzone from '$components/Dropzone.svelte';
+  import { uploadErrorMessage, readErrorCode } from '$lib/utils/errors';
 
   let { data } = $props();
   let busy = $state(false);
@@ -17,12 +18,14 @@
       fd.append('file', file);
       const res = await fetch('/api/upload', { method: 'POST', body: fd });
       if (!res.ok) {
-        error = (await res.text()) || 'upload failed';
+        error = uploadErrorMessage(await readErrorCode(res));
         return;
       }
       const out = await res.json();
       result = { shareUrl: out.shareUrl, title: out.title };
       await navigator.clipboard.writeText(out.shareUrl);
+    } catch (e) {
+      error = e instanceof Error ? e.message : 'upload failed — network error';
     } finally {
       busy = false;
     }

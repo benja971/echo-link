@@ -15,7 +15,30 @@ export const POST: RequestHandler = async ({ request }) => {
   const token = await createMagicLink(user.id);
   const link = `${env().PUBLIC_BASE_URL}/login/verify?token=${encodeURIComponent(token)}`;
 
-  await sendMagicLink(body.data.email, link);
+  // In dev (or when SMTP is not reachable), log the magic link to the
+  // server console so the dev can grab it without a working mail server.
+  // We never expose the link in the API response (would defeat the magic-
+  // link security model).
+  const isDev = process.env.NODE_ENV !== 'production';
+  if (isDev) {
+    console.log('\n  ──── magic link (dev) ────');
+    console.log(`  to:   ${body.data.email}`);
+    console.log(`  link: ${link}`);
+    console.log('  ──────────────────────────\n');
+  }
+
+  try {
+    await sendMagicLink(body.data.email, link);
+  } catch (err) {
+    // Don't leak SMTP failures to the client. The magic_link row is
+    // already inserted; in dev the link is in the server log above.
+    // In prod, SMTP outages should be alerted out-of-band.
+    console.warn('[auth/request] sendMagicLink failed:', (err as Error).message);
+    if (!isDev) {
+      // In production, surface a clear-but-vague error so the user can retry.
+      throw error(503, 'mail_unavailable');
+    }
+  }
 
   return json({ ok: true });
 };

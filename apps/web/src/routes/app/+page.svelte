@@ -9,11 +9,13 @@
   import { useDropAnywhere } from '$lib/hooks/useDropAnywhere.svelte';
   import { useShortcuts } from '$lib/hooks/useShortcuts.svelte';
   import { theme } from '$lib/stores/theme.svelte';
+  import { uploadErrorMessage, readErrorCode } from '$lib/utils/errors';
   import { onMount } from 'svelte';
 
   let { data } = $props();
 
   let busy = $state(false);
+  let uploadError = $state<string | null>(null);
   let paletteOpen = $state(false);
   let recent = $derived(data.files.slice(0, 3));
   let allFiles = $derived(data.files);
@@ -22,18 +24,20 @@
 
   async function handleFile(file: File) {
     busy = true;
+    uploadError = null;
     try {
       const fd = new FormData();
       fd.append('file', file);
       const res = await fetch('/api/upload', { method: 'POST', body: fd });
       if (!res.ok) {
-        console.error('upload failed', await res.text());
+        uploadError = uploadErrorMessage(await readErrorCode(res));
         return;
       }
       const out = await res.json();
       await navigator.clipboard.writeText(out.shareUrl);
-      // refresh page data
       window.location.reload();
+    } catch (e) {
+      uploadError = e instanceof Error ? e.message : 'upload failed — network error';
     } finally {
       busy = false;
     }
@@ -91,6 +95,11 @@
 
   <section class="mx-auto mt-7 max-w-3xl px-8">
     <Dropzone onFile={handleFile} {busy} />
+    {#if uploadError}
+      <div class="mt-3 rounded-md border border-red/30 bg-red/5 p-3 font-mono text-sm text-red">
+        {uploadError}
+      </div>
+    {/if}
   </section>
 
   {#if recent.length > 0}
