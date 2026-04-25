@@ -4,14 +4,21 @@
   import Dropzone from '$components/Dropzone.svelte';
   import FileRow from '$components/FileRow.svelte';
   import FileGrid from '$components/FileGrid.svelte';
+  import CommandPalette from '$components/CommandPalette.svelte';
   import { formatFileSize } from '$lib/utils/format';
   import { useDropAnywhere } from '$lib/hooks/useDropAnywhere.svelte';
+  import { useShortcuts } from '$lib/hooks/useShortcuts.svelte';
+  import { theme } from '$lib/stores/theme.svelte';
+  import { onMount } from 'svelte';
 
   let { data } = $props();
 
   let busy = $state(false);
+  let paletteOpen = $state(false);
   let recent = $derived(data.files.slice(0, 3));
   let allFiles = $derived(data.files);
+
+  onMount(() => theme.init());
 
   async function handleFile(file: File) {
     busy = true;
@@ -36,7 +43,28 @@
     navigator.clipboard.writeText(`${window.location.origin}/v/${file.id}`);
   }
 
+  async function signOut() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/';
+  }
+
+  function copyLast() {
+    if (recent[0]) copyLink(recent[0]);
+  }
+
   const dnd = useDropAnywhere(handleFile, () => !busy);
+
+  useShortcuts(() => [
+    { key: 'k', meta: true, action: () => (paletteOpen = !paletteOpen) },
+    { key: 'k', ctrl: true, action: () => (paletteOpen = !paletteOpen) },
+    { key: 'o', meta: true, action: () => document.querySelector<HTMLButtonElement>('[data-pick-trigger]')?.click() },
+    { key: 't', meta: true, action: () => theme.toggle() },
+    ...recent.map((file, i) => ({
+      key: String(i + 1),
+      meta: true,
+      action: () => copyLink(file)
+    }))
+  ]);
 </script>
 
 <svelte:head><title>echo·link · workspace</title></svelte:head>
@@ -45,6 +73,9 @@
   <header class="flex items-center justify-between border-b border-surface0 px-7 py-4">
     <Brand />
     <div class="flex items-center gap-3">
+      <span class="text-xs text-overlay1">
+        press <span class="font-mono rounded border border-surface1 border-b-2 bg-surface0 px-1.5 py-0.5 text-[10px] text-subtext0">⌘K</span> for anything
+      </span>
       <span class="inline-flex items-center gap-2 rounded-full bg-surface0 px-3 py-1 font-mono text-xs text-subtext1 before:h-1.5 before:w-1.5 before:rounded-full before:bg-green before:[box-shadow:0_0_6px_var(--color-green)]">
         {data.session?.email}
       </span>
@@ -89,3 +120,12 @@
     <div class="font-mono text-xl text-mauve">[ drop to upload ]</div>
   </div>
 {/if}
+
+<CommandPalette
+  bind:open={paletteOpen}
+  onClose={() => (paletteOpen = false)}
+  files={allFiles}
+  onUpload={() => document.querySelector<HTMLButtonElement>('[data-pick-trigger]')?.click()}
+  onCopyLast={copyLast}
+  onSignOut={signOut}
+/>
