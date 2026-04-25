@@ -144,6 +144,10 @@
 
 * { box-sizing: border-box; }
 
+html {
+  font-size: 17px; /* base rem unit — bumps every Tailwind text-* class by ~6% */
+}
+
 html, body {
   background: var(--color-crust);
   color: var(--color-text);
