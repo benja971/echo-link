@@ -91,7 +91,7 @@ async function createUploadSession(
 ): Promise<EchoLinkSessionResponse> {
   console.log(`📝 Creating upload session for Discord user ${userId}`);
 
-  const response = await fetch(`${botConfig.echolinkBaseUrl}/discord/upload-session`, {
+  const response = await fetch(`${botConfig.echolinkBaseUrl}/api/discord/upload-session`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${botConfig.echolinkBotToken}`,
@@ -197,7 +197,7 @@ async function linkDiscordAccount(
 ): Promise<EchoLinkLinkResponse> {
   console.log(`🔗 Linking Discord user ${userId} with code ${code}`);
 
-  const response = await fetch(`${botConfig.echolinkBaseUrl}/discord/link`, {
+  const response = await fetch(`${botConfig.echolinkBaseUrl}/api/discord/link`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${botConfig.echolinkBotToken}`,
