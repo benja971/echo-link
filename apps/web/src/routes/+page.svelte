@@ -89,22 +89,22 @@
 </section>
 
 <section class="mx-auto mt-24 max-w-2xl px-8">
-  <div class="grid grid-cols-[80px_1fr] gap-8 border-t border-surface0 py-9">
-    <div class="pt-1.5 font-mono text-[11px] uppercase tracking-wider text-accent before:content-['→_'] before:text-overlay1">why</div>
+  <div class="grid grid-cols-[110px_1fr] gap-8 border-t border-surface0 py-9">
+    <div class="pt-1.5 font-mono text-[11px] uppercase tracking-wider whitespace-nowrap text-accent before:content-['→_'] before:text-overlay1">why</div>
     <div>
       <h3 class="mb-3 text-3xl font-medium tracking-tight">file size limits everywhere.<br /><span class="text-accent">echo·link is just a link.</span></h3>
       <p class="max-w-lg text-subtext1">Discord caps at <code class="font-mono text-sm bg-surface0 text-peach px-1.5 py-px rounded">50MB</code> free, <code class="font-mono text-sm bg-surface0 text-peach px-1.5 py-px rounded">500MB</code> Nitro. WeTransfer wants emails. Drive is overkill for a clip you just want to send to two friends.</p>
     </div>
   </div>
-  <div class="grid grid-cols-[80px_1fr] gap-8 border-t border-surface0 py-9">
-    <div class="pt-1.5 font-mono text-[11px] uppercase tracking-wider text-accent before:content-['→_'] before:text-overlay1">for what</div>
+  <div class="grid grid-cols-[110px_1fr] gap-8 border-t border-surface0 py-9">
+    <div class="pt-1.5 font-mono text-[11px] uppercase tracking-wider whitespace-nowrap text-accent before:content-['→_'] before:text-overlay1">for what</div>
     <div>
       <h3 class="mb-3 text-3xl font-medium tracking-tight">game clips. design WIPs. <span class="text-accent">whatever.</span></h3>
       <p class="max-w-lg text-subtext1">Anything that needs to live behind a tidy URL — beautifully embedded with native players in Discord, Telegram, iMessage. Or just plain links for the rest.</p>
     </div>
   </div>
-  <div class="grid grid-cols-[80px_1fr] gap-8 border-t border-surface0 py-9">
-    <div class="pt-1.5 font-mono text-[11px] uppercase tracking-wider text-accent before:content-['→_'] before:text-overlay1">what you get</div>
+  <div class="grid grid-cols-[110px_1fr] gap-8 border-t border-surface0 py-9">
+    <div class="pt-1.5 font-mono text-[11px] uppercase tracking-wider whitespace-nowrap text-accent before:content-['→_'] before:text-overlay1">what you get</div>
     <div>
       <h3 class="mb-3 text-3xl font-medium tracking-tight">a tool that <span class="text-accent">respects you.</span></h3>
       <p class="max-w-lg text-subtext1">self-hosted, open source, keyboard-first, catppuccin theme baked in, PWA installable, QR code per file, multiple copy formats, zero ads, zero tracking.</p>
