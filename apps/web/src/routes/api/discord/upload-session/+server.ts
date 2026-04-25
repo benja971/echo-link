@@ -19,8 +19,8 @@ export const POST: RequestHandler = async ({ request }) => {
 
   const session = await createDiscordUploadSession(parsed.data);
   return json({
-    token: session.token,
-    redirectUrl: `${env().PUBLIC_BASE_URL}/discord/upload/${session.token}`,
+    sessionId: session.token,
+    uploadUrl: `${env().PUBLIC_BASE_URL}/discord/upload/${session.token}`,
     expiresAt: session.expiresAt
   });
 };

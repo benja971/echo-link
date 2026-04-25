@@ -43,6 +43,8 @@ export async function markSessionConsumed(id: string) {
   await db.update(discordUploadSessions).set({ consumedAt: new Date() }).where(eq(discordUploadSessions.id, id));
 }
 
+export type LinkOutcome = 'linked' | 'already_linked' | 'merged';
+
 export async function consumeDiscordLinkCode(code: string, discordUserId: string, discordDisplayName?: string) {
   const db = getDb();
   const row = (
@@ -63,22 +65,27 @@ export async function consumeDiscordLinkCode(code: string, discordUserId: string
       .limit(1)
   )[0];
 
-  if (existing && existing.accountId !== row.accountId) {
+  let outcome: LinkOutcome;
+  if (existing && existing.accountId === row.accountId) {
+    outcome = 'already_linked';
+  } else if (existing) {
     const oldAccount = existing.accountId;
     await db.update(uploadIdentities).set({ accountId: row.accountId }).where(eq(uploadIdentities.id, existing.id));
     await db.update(filesTbl).set({ accountId: row.accountId }).where(eq(filesTbl.accountId, oldAccount));
     await db.delete(accounts).where(eq(accounts.id, oldAccount));
-  } else if (!existing) {
+    outcome = 'merged';
+  } else {
     await db.insert(uploadIdentities).values({
       accountId: row.accountId,
       kind: 'discord_user',
       externalId: discordUserId,
       displayName: discordDisplayName
     });
+    outcome = 'linked';
   }
 
   await db.update(discordLinkRequests).set({ usedAt: new Date() }).where(eq(discordLinkRequests.id, row.id));
-  return { ok: true as const, accountId: row.accountId };
+  return { ok: true as const, status: outcome, accountId: row.accountId };
 }
 
 export async function startDiscordLink(accountId: string): Promise<{ code: string; expiresAt: Date }> {

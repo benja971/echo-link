@@ -18,5 +18,11 @@ export const POST: RequestHandler = async ({ request }) => {
 
   const result = await consumeDiscordLinkCode(parsed.data.code, parsed.data.discordUserId, parsed.data.discordDisplayName);
   if (!result.ok) throw error(400, result.reason);
-  return json({ ok: true });
+  const message =
+    result.status === 'merged'
+      ? 'discord account linked; previous discord-only files merged into your account'
+      : result.status === 'already_linked'
+        ? 'discord account already linked to this echo-link account'
+        : 'discord account linked successfully';
+  return json({ status: result.status, accountId: result.accountId, message });
 };
