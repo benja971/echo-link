@@ -1,0 +1,27 @@
+{
+  "name": "echo-link",
+  "version": "2.0.0-dev",
+  "private": true,
+  "type": "module",
+  "workspaces": ["apps/web", "apps/bot", "packages/db"],
+  "scripts": {
+    "dev": "bun --filter web dev",
+    "dev:bot": "bun --filter bot dev",
+    "build": "bun --filter web build && bun --filter bot build",
+    "start": "bun --filter web start",
+    "start:bot": "bun --filter bot start",
+    "db:generate": "bun --filter @echo-link/db generate",
+    "db:migrate": "bun --filter @echo-link/db migrate",
+    "db:studio": "bun --filter @echo-link/db studio",
+    "lint": "bun --filter web check",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "^3.3.0",
+    "prettier-plugin-svelte": "^3.2.0",
+    "prettier-plugin-tailwindcss": "^0.6.0"
+  },
+  "engines": {
+    "bun": ">=1.1.0"
+  }
+}
