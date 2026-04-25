@@ -22,12 +22,8 @@ const envSchema = z.object({
   S3_SECRET_KEY: z.string(),
   S3_FORCE_PATH_STYLE: z.string().default('true').transform((v) => v === 'true'),
 
-  EMAIL_HOST: z.string(),
-  EMAIL_PORT: z.coerce.number().default(587),
-  EMAIL_SECURE: z.string().default('false').transform((v) => v === 'true'),
-  EMAIL_USER: z.string(),
-  EMAIL_PASSWORD: z.string(),
-  EMAIL_FROM: z.string().optional(),
+  RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
+  EMAIL_FROM: z.string().min(1, 'EMAIL_FROM is required (must be a verified Resend sender, or onboarding@resend.dev for early dev)'),
 
   SESSION_SECRET: z.string().min(32, 'SESSION_SECRET must be ≥ 32 chars'),
   MAGIC_LINK_EXPIRATION_MINUTES: z.coerce.number().default(15),

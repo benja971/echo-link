@@ -1,22 +1,17 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { env } from './env';
 
-let _transport: nodemailer.Transporter | null = null;
+let _client: Resend | null = null;
 
-function transport() {
-  if (_transport) return _transport;
-  _transport = nodemailer.createTransport({
-    host: env().EMAIL_HOST,
-    port: env().EMAIL_PORT,
-    secure: env().EMAIL_SECURE,
-    auth: { user: env().EMAIL_USER, pass: env().EMAIL_PASSWORD }
-  });
-  return _transport;
+function client() {
+  if (_client) return _client;
+  _client = new Resend(env().RESEND_API_KEY);
+  return _client;
 }
 
 export async function sendMagicLink(to: string, link: string) {
-  await transport().sendMail({
-    from: env().EMAIL_FROM ?? env().EMAIL_USER,
+  const result = await client().emails.send({
+    from: env().EMAIL_FROM,
     to,
     subject: 'your echo·link sign-in link',
     text: `click to sign in:\n\n${link}\n\nthis link expires in ${env().MAGIC_LINK_EXPIRATION_MINUTES} minutes.`,
@@ -30,4 +25,5 @@ export async function sendMagicLink(to: string, link: string) {
       </div>
     `
   });
+  if (result.error) throw new Error(`resend: ${result.error.message}`);
 }
