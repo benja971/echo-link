@@ -10,7 +10,7 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "lib": ["ES2022"],
-    "types": ["bun-types"]
+    "types": []
   },
   "include": ["src/**/*"]
 }
