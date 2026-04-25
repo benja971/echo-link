@@ -8,6 +8,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#1e1e2e" />
     <link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
+    <script>
+      // Apply saved theme + accent before first paint to avoid FOUC.
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          var a = localStorage.getItem('accent');
+          if (t === 'mocha' || t === 'latte') document.documentElement.dataset.theme = t;
+          if (a) document.documentElement.dataset.accent = a;
+        } catch (e) {}
+      })();
+    </script>
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover">
