@@ -68,7 +68,7 @@
     <p>
       this is open source. you can read every line at the
       <a
-        href="https://github.com"
+        href="https://github.com/benja971/echo-link"
         target="_blank"
         rel="noopener noreferrer"
         class="text-accent hover:underline">github repo</a

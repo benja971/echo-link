@@ -37,8 +37,8 @@
 <header class="flex items-center justify-between border-b border-surface0 px-7 py-4">
   <Brand />
   <nav class="flex gap-3.5 font-mono text-xs text-subtext0">
-    <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="hover:text-text">github</a>
-    <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="hover:text-text">self-host</a>
+    <a href="https://github.com/benja971/echo-link" target="_blank" rel="noopener noreferrer" class="hover:text-text">github</a>
+    <a href="https://github.com/benja971/echo-link" target="_blank" rel="noopener noreferrer" class="hover:text-text">self-host</a>
     {#if data.isAuthenticated}
       <a href="/app" class="hover:text-accent">open app →</a>
     {:else}
@@ -115,8 +115,8 @@
 <footer class="mt-24 flex flex-wrap justify-between gap-4 border-t border-surface0 px-8 py-6 font-mono text-[11px] text-overlay1">
   <span>made with ☕ &nbsp;by ben</span>
   <span class="flex gap-6">
-    <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="text-subtext0 hover:text-accent">github</a>
-    <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="text-subtext0 hover:text-accent">self-host this</a>
+    <a href="https://github.com/benja971/echo-link" target="_blank" rel="noopener noreferrer" class="text-subtext0 hover:text-accent">github</a>
+    <a href="https://github.com/benja971/echo-link" target="_blank" rel="noopener noreferrer" class="text-subtext0 hover:text-accent">self-host this</a>
     <a href="/privacy" class="text-subtext0 hover:text-accent">privacy</a>
     <span class="text-overlay0">v2.0.0</span>
   </span>
