@@ -1,6 +1,7 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
   import { onMount } from 'svelte';
+  import { isMac } from '$lib/utils/platform';
 
   type Props = {
     tips: string[];
@@ -19,14 +20,17 @@
     return () => clearInterval(timer);
   });
 
-  // Render `<TOKEN>` segments as small kbd-styled badges. Use this syntax
-  // in TIPS rather than relying on heuristic detection of bare letters.
+  // Render `<TOKEN>` segments as small kbd-styled badges. ⌘ inside a token
+  // is translated to "Ctrl+" on non-Mac platforms so tips stay accurate
+  // cross-platform without duplicating the strings.
   function escapeHtml(s: string) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
   function renderTip(t: string) {
+    const mac = isMac();
     return t.replace(/<([^<>\s]+)>/g, (_, token: string) => {
-      const safe = escapeHtml(token);
+      const platformToken = mac ? token : token.replace(/⌘/g, 'Ctrl+');
+      const safe = escapeHtml(platformToken);
       return `<kbd class="font-mono rounded border border-surface1 border-b-2 bg-surface0 px-1.5 py-px text-xs text-text">${safe}</kbd>`;
     });
   }
