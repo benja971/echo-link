@@ -9,8 +9,17 @@ export function useDropAnywhere(
 
   onMount(() => {
     let counter = 0;
+
+    /** True when the drag originated inside our app (FileGrid/FileRow drag-out).
+     *  We tag those with the application/x-echo-link-internal type so we don't
+     *  show the "[ drop to upload ]" overlay or try to upload anything. */
+    function isInternalDrag(e: DragEvent): boolean {
+      return e.dataTransfer?.types.includes('application/x-echo-link-internal') ?? false;
+    }
+
     const onDragEnter = (e: DragEvent) => {
       if (!enabled()) return;
+      if (isInternalDrag(e)) return;
       counter++;
       if (e.dataTransfer?.types.includes('Files')) dragging = true;
     };
@@ -23,10 +32,17 @@ export function useDropAnywhere(
     };
     const onDragOver = (e: DragEvent) => {
       if (!enabled()) return;
+      if (isInternalDrag(e)) return;
       e.preventDefault();
     };
     const onDrop = (e: DragEvent) => {
       if (!enabled()) return;
+      if (isInternalDrag(e)) {
+        // user dragged a tile around inside our page — do nothing.
+        counter = 0;
+        dragging = false;
+        return;
+      }
       e.preventDefault();
       counter = 0;
       dragging = false;

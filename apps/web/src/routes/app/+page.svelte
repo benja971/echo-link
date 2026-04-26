@@ -231,8 +231,22 @@
     { key: 'arrowdown', enabled: () => !anyOverlayOpen, action: () => moveSelection(+1) },
     { key: 'arrowup', enabled: () => !anyOverlayOpen, action: () => moveSelection(-1) },
     { key: 'enter', enabled: () => !anyOverlayOpen && selectedFile !== null, action: () => { if (selectedFile) preview = selectedFile; } },
-    // Multi-select (vim/gmail style)
-    { key: ' ', enabled: () => !anyOverlayOpen && selectedFile !== null, action: () => { if (selectedFile) toggleMark(selectedFile.id); } },
+    // Multi-select (vim/gmail style). The enabled() guard intentionally
+    // does NOT require an existing focus — pressing Space with nothing
+    // focused jumps to the first file AND marks it (also stops the
+    // browser from default-scrolling the page).
+    {
+      key: ' ',
+      enabled: () => !anyOverlayOpen && allFiles.length > 0,
+      action: () => {
+        let f = selectedFile;
+        if (f === null) {
+          selectedIndex = 0;
+          f = allFiles[0] ?? null;
+        }
+        if (f) toggleMark(f.id);
+      }
+    },
     { key: 'a', enabled: () => !anyOverlayOpen && allFiles.length > 0, action: selectAll },
     { key: 'd', enabled: () => !anyOverlayOpen && hasMarked, action: deleteMarked },
     { key: 'escape', enabled: () => !anyOverlayOpen && (selectedIndex !== null || hasMarked), action: () => { selectedIndex = null; clearMarked(); } },

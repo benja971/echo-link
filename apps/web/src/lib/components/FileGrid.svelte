@@ -32,13 +32,16 @@
 
   /** Native HTML5 drag-out: dragging a tile to another tab/app drops the
    *  share URL. Also sets text/plain so apps that don't read uri-list
-   *  (Discord, Slack, ...) still receive the URL as text. */
+   *  (Discord, Slack, ...) still receive the URL as text. The custom
+   *  application/x-echo-link-internal type lets useDropAnywhere ignore
+   *  the drag if it ever loops back into our own page. */
   function onDragStart(e: DragEvent, file: File) {
     if (!e.dataTransfer) return;
     const url = shareUrlOf(file);
     e.dataTransfer.effectAllowed = 'copyLink';
     e.dataTransfer.setData('text/uri-list', url);
     e.dataTransfer.setData('text/plain', url);
+    e.dataTransfer.setData('application/x-echo-link-internal', '1');
   }
 </script>
 
@@ -71,6 +74,7 @@
           alt={file.title ?? ''}
           loading="lazy"
           decoding="async"
+          draggable="false"
           class="absolute inset-0 h-full w-full object-cover"
         />
         <!-- subtle gradient at the bottom so the size badge stays readable over light images -->
