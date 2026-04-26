@@ -222,7 +222,21 @@
   </div>
 {/if}
 
-<!-- sticky tip ticker — terminal-status-bar vibe -->
-<div class="fixed inset-x-0 bottom-0 z-30 border-t border-surface0 bg-mantle/85 px-4 py-2.5 text-center backdrop-blur">
-  <RotatingTip tips={TIPS} class="text-sm text-subtext0" />
+<!-- sticky tip ticker + theme/accent status — terminal-status-bar vibe -->
+<div class="fixed inset-x-0 bottom-0 z-30 flex items-center gap-4 border-t border-surface0 bg-mantle/85 px-4 py-2.5 backdrop-blur">
+  <div class="flex-1 truncate text-center">
+    <RotatingTip tips={TIPS} class="text-sm text-subtext0" />
+  </div>
+  <button
+    type="button"
+    onclick={() => (paletteOpen = true)}
+    title="open command palette to change theme or accent"
+    class="hidden shrink-0 items-center gap-2 font-mono text-xs text-overlay1 transition-colors hover:text-text sm:flex"
+  >
+    <span
+      class="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+      style:background-color="var(--color-accent)"
+    ></span>
+    <span>{theme.current} · {theme.accent}</span>
+  </button>
 </div>
