@@ -98,7 +98,6 @@
     <Dropzone
       onFiles={handleFiles}
       {busy}
-      isDragging={dnd.dragging}
       title="drop a file to try it"
       sub="or click · or paste · or ⌘O"
       anonTag={`≤ ${data.anonMaxMb}mb · expires ${data.anonHours}h · no account`}
@@ -169,6 +168,12 @@
   </div>
 </section>
 
+
+{#if dnd.dragging}
+  <div class="fixed inset-0 z-50 grid place-items-center bg-base/80 backdrop-blur">
+    <div class="font-mono text-xl text-accent">[ drop to upload ]</div>
+  </div>
+{/if}
 
 <footer class="mt-24 flex flex-wrap justify-between gap-4 border-t border-surface0 px-8 py-6 font-mono text-[11px] text-overlay1">
   <span>made with ☕ &nbsp;by ben</span>

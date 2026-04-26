@@ -212,7 +212,7 @@
   </section>
 
   <section class="mx-auto mt-7 max-w-3xl px-8">
-    <Dropzone onFiles={handleFiles} {busy} isDragging={dnd.dragging} />
+    <Dropzone onFiles={handleFiles} {busy} />
     {#if uploadProgress}
       <div class="mt-3 rounded-md border border-surface0 bg-mantle p-3">
         <div class="mb-2 flex items-baseline justify-between font-mono text-xs">
@@ -298,6 +298,12 @@
   bind:open={cheatsheetOpen}
   onClose={() => (cheatsheetOpen = false)}
 />
+
+{#if dnd.dragging}
+  <div class="fixed inset-0 z-50 grid place-items-center bg-base/80 backdrop-blur">
+    <div class="font-mono text-xl text-accent">[ drop to upload ]</div>
+  </div>
+{/if}
 
 <!-- Copy/action toast — bottom-right, above the tip strip -->
 {#if toast.message}
