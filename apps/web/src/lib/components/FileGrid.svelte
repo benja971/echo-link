@@ -11,6 +11,21 @@
     if (file.thumbnailS3Key) return `/files/${file.thumbnailS3Key}`;
     return null;
   }
+
+  function shareUrlOf(file: File): string {
+    return `${window.location.origin}/v/${file.id}`;
+  }
+
+  /** Native HTML5 drag-out: dragging a tile to another tab/app drops the
+   *  share URL. Also sets text/plain so apps that don't read uri-list
+   *  (Discord, Slack, ...) still receive the URL as text. */
+  function onDragStart(e: DragEvent, file: File) {
+    if (!e.dataTransfer) return;
+    const url = shareUrlOf(file);
+    e.dataTransfer.effectAllowed = 'copyLink';
+    e.dataTransfer.setData('text/uri-list', url);
+    e.dataTransfer.setData('text/plain', url);
+  }
 </script>
 
 <div class="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
@@ -19,8 +34,10 @@
     {@const url = thumbUrl(file)}
     <button
       onclick={() => onSelect?.(file)}
-      class="relative aspect-square overflow-hidden rounded-md border border-surface0 bg-gradient-to-br from-surface0 to-mantle font-mono text-2xl text-{mimeColor(kind)} transition-all duration-200 [transition-timing-function:var(--ease-out-expo)] hover:-translate-y-0.5 hover:scale-[1.02] hover:border-accent"
-      title={file.title ?? file.s3Key}
+      draggable="true"
+      ondragstart={(e) => onDragStart(e, file)}
+      class="relative aspect-square cursor-grab overflow-hidden rounded-md border border-surface0 bg-gradient-to-br from-surface0 to-mantle font-mono text-2xl text-{mimeColor(kind)} transition-all duration-200 [transition-timing-function:var(--ease-out-expo)] hover:-translate-y-0.5 hover:scale-[1.02] hover:border-accent active:cursor-grabbing"
+      title={`${file.title ?? file.s3Key} — drag to share`}
     >
       {#if url}
         <img

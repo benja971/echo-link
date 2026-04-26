@@ -13,10 +13,21 @@
   };
   let { file, shortcutLabel, onCopy, onMore, delay = 0 }: Props = $props();
   const kind = $derived(mimeKind(file.mimeType));
+
+  function onDragStart(e: DragEvent) {
+    if (!e.dataTransfer) return;
+    const url = `${window.location.origin}/v/${file.id}`;
+    e.dataTransfer.effectAllowed = 'copyLink';
+    e.dataTransfer.setData('text/uri-list', url);
+    e.dataTransfer.setData('text/plain', url);
+  }
 </script>
 
 <div
-  class="grid grid-cols-[32px_1fr_auto_auto_auto_auto] items-center gap-3 rounded-md border border-surface0 bg-mantle px-4 py-3 font-mono text-sm transition-all duration-200 [transition-timing-function:var(--ease-out-expo)] hover:translate-x-0.5 hover:border-surface2 hover:bg-base"
+  draggable="true"
+  ondragstart={onDragStart}
+  class="grid cursor-grab grid-cols-[32px_1fr_auto_auto_auto_auto] items-center gap-3 rounded-md border border-surface0 bg-mantle px-4 py-3 font-mono text-sm transition-all duration-200 [transition-timing-function:var(--ease-out-expo)] hover:translate-x-0.5 hover:border-surface2 hover:bg-base active:cursor-grabbing"
+  title="drag to share"
   style="animation: slide-in 0.5s var(--ease-out-expo) {delay}ms both;"
 >
   <div class="grid h-8 w-8 place-items-center rounded-md bg-surface0 text-{mimeColor(kind)}">
