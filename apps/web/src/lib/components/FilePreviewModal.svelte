@@ -7,8 +7,9 @@
   type Props = {
     file: File | null;
     onClose: () => void;
+    onDeleted?: (id: string) => void;
   };
-  let { file, onClose }: Props = $props();
+  let { file, onClose, onDeleted }: Props = $props();
 
   const fileUrl = $derived(file ? `/files/${file.s3Key}` : '');
   const shareUrl = $derived(
@@ -19,11 +20,37 @@
   const isAudio = $derived(file?.mimeType.startsWith('audio/') ?? false);
 
   let copied = $state(false);
+  let deleting = $state(false);
+  let deleteError = $state<string | null>(null);
+  let confirmingDelete = $state(false);
+
   async function copyLink() {
     if (!shareUrl) return;
     await navigator.clipboard.writeText(shareUrl);
     copied = true;
     setTimeout(() => (copied = false), 1400);
+  }
+
+  async function doDelete() {
+    if (!file) return;
+    deleting = true;
+    deleteError = null;
+    try {
+      const res = await fetch(`/api/files/${file.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        deleteError = body.message ?? `delete failed (${res.status})`;
+        return;
+      }
+      const id = file.id;
+      onDeleted?.(id);
+      onClose();
+    } catch (e) {
+      deleteError = e instanceof Error ? e.message : 'delete failed';
+    } finally {
+      deleting = false;
+      confirmingDelete = false;
+    }
   }
 
   onMount(() => {
@@ -103,6 +130,35 @@
           </div>
         </div>
         <div class="flex shrink-0 gap-2">
+          {#if onDeleted}
+            {#if confirmingDelete}
+              <button
+                type="button"
+                onclick={doDelete}
+                disabled={deleting}
+                class="inline-flex items-center rounded-md border border-red bg-red/15 px-3 py-2 font-mono text-xs text-red transition-colors hover:bg-red/25 disabled:opacity-60"
+              >
+                {deleting ? 'deleting…' : '✕ confirm delete'}
+              </button>
+              <button
+                type="button"
+                onclick={() => (confirmingDelete = false)}
+                disabled={deleting}
+                class="inline-flex items-center rounded-md border border-surface1 bg-surface0 px-3 py-2 font-mono text-xs text-subtext1 transition-colors hover:bg-surface1 hover:text-text"
+              >
+                cancel
+              </button>
+            {:else}
+              <button
+                type="button"
+                onclick={() => (confirmingDelete = true)}
+                title="delete this file permanently"
+                class="inline-flex items-center rounded-md border border-surface1 bg-surface0 px-3 py-2 font-mono text-xs text-subtext1 transition-colors hover:border-red/40 hover:bg-red/10 hover:text-red"
+              >
+                ✕ delete
+              </button>
+            {/if}
+          {/if}
           <a
             href={fileUrl}
             download
@@ -120,6 +176,11 @@
           </button>
         </div>
       </div>
+      {#if deleteError}
+        <div class="border-t border-red/20 bg-red/5 px-5 py-2 font-mono text-xs text-red">
+          {deleteError}
+        </div>
+      {/if}
 
       <!-- Close button (top-right corner of the modal) -->
       <button

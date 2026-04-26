@@ -18,6 +18,7 @@
   import RotatingTip from '$components/RotatingTip.svelte';
   import { onMount } from 'svelte';
   import { fly } from 'svelte/transition';
+  import { invalidateAll } from '$app/navigation';
 
   let { data } = $props();
 
@@ -205,7 +206,14 @@
   onSignOut={signOut}
 />
 
-<FilePreviewModal file={preview} onClose={() => (preview = null)} />
+<FilePreviewModal
+  file={preview}
+  onClose={() => (preview = null)}
+  onDeleted={(name) => {
+    flashToast(`✓ file deleted`);
+    void invalidateAll();
+  }}
+/>
 
 <KeyboardCheatsheet
   bind:open={cheatsheetOpen}
