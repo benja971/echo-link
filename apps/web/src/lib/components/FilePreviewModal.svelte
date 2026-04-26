@@ -196,8 +196,11 @@
       class="relative pointer-events-auto flex max-h-[88vh] max-w-[92vw] flex-col overflow-hidden rounded-xl border border-surface1 bg-mantle shadow-2xl"
       transition:scale={{ duration: 220, start: 0.96, opacity: 0 }}
     >
-      <!-- Media area -->
-      <div class="grid place-items-center bg-crust">
+      <!-- Media area — min-h-0 + overflow-hidden lets it shrink so the
+           footer/edit form below stays visible. The media element keeps
+           its own max-h-[72vh] / max-w-[88vw] caps so the modal doesn't
+           blow up to the video's intrinsic size. -->
+      <div class="grid min-h-0 place-items-center overflow-hidden bg-crust">
         {#if isImage}
           <img
             src={fileUrl}
@@ -233,8 +236,9 @@
       </div>
 
       {#if editing}
-        <!-- Edit form replaces footer while editing -->
-        <div class="flex flex-col gap-3 border-t border-surface0 bg-mantle px-5 py-4">
+        <!-- Edit form replaces footer while editing. shrink-0 keeps the
+             save/cancel row visible even when the modal hits max-h. -->
+        <div class="flex shrink-0 flex-col gap-3 border-t border-surface0 bg-mantle px-5 py-4">
           <div class="flex flex-col gap-1">
             <label for="edit-title" class="font-mono text-[11px] uppercase tracking-wide text-overlay1">
               title
@@ -294,7 +298,7 @@
         </div>
       {:else}
         <!-- Footer with metadata + actions -->
-        <div class="flex items-center justify-between gap-4 border-t border-surface0 bg-mantle px-5 py-3">
+        <div class="flex shrink-0 items-center justify-between gap-4 border-t border-surface0 bg-mantle px-5 py-3">
           <div class="min-w-0 flex-1">
             <div class="truncate text-sm font-medium text-text">{file.title ?? file.s3Key}</div>
             <div class="font-mono text-xs text-overlay1">
