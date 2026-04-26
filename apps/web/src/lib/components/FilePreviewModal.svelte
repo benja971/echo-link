@@ -197,14 +197,15 @@
       transition:scale={{ duration: 220, start: 0.96, opacity: 0 }}
     >
       <!-- Media area — min-h-0 + overflow-hidden lets it shrink so the
-           footer/edit form below stays visible even when the modal hits
-           its max-h cap (e.g. tall video + edit form on a short viewport). -->
+           footer/edit form below stays visible. The media element keeps
+           its own max-h-[72vh] / max-w-[88vw] caps so the modal doesn't
+           blow up to the video's intrinsic size. -->
       <div class="grid min-h-0 place-items-center overflow-hidden bg-crust">
         {#if isImage}
           <img
             src={fileUrl}
             alt={file.title ?? ''}
-            class="block max-h-full max-w-[88vw] object-contain"
+            class="block max-h-[72vh] max-w-[88vw] object-contain"
           />
         {:else if isVideo}
           <!-- svelte-ignore a11y_media_has_caption — user-uploaded media -->
@@ -212,7 +213,7 @@
             src={fileUrl}
             controls
             autoplay
-            class="block max-h-full max-w-[88vw]"
+            class="block max-h-[72vh] max-w-[88vw]"
           ></video>
         {:else if isAudio}
           <div class="grid place-items-center px-12 py-16">
