@@ -71,10 +71,10 @@
         <div class="grid h-full place-items-center font-mono text-overlay1">{file.mimeType}</div>
       {/if}
     </div>
-    <div class="grid grid-cols-[1fr_auto] gap-6 p-6">
-      <div>
-        <h2 class="mb-2 text-2xl font-medium tracking-tight">{file.title ?? 'shared file'}</h2>
-        <div class="font-mono text-xs text-overlay1 tracking-wide">
+    <div class="flex items-start justify-between gap-6 p-6">
+      <div class="min-w-0 flex-1">
+        <h2 class="mb-2 truncate text-2xl font-medium tracking-tight">{file.title ?? 'shared file'}</h2>
+        <div class="font-mono text-xs tracking-wide text-overlay1">
           {file.mimeType}
           <span class="mx-1.5 text-subtext0">·</span>{formatFileSize(file.sizeBytes)}
           {#if file.width && file.height}
@@ -83,23 +83,21 @@
           <span class="mx-1.5 text-subtext0">·</span>{formatExpiresIn(file.expiresAt)}
         </div>
       </div>
-      <div class="flex gap-2">
-        <a href={fileUrl} download class="rounded-md border border-surface1 bg-surface0 px-3.5 py-2 font-mono text-[11px] text-subtext1 transition-colors hover:bg-surface1 hover:text-text">
-          ↓ download
-        </a>
-      </div>
+      <a
+        href={fileUrl}
+        download
+        class="shrink-0 rounded-md border border-surface1 bg-surface0 px-3 py-1.5 font-mono text-[11px] text-subtext1 transition-colors hover:bg-surface1 hover:text-text"
+      >
+        ↓ download
+      </a>
     </div>
     <ShareLinkBar url={shareUrl} title={file.title ?? 'file'} mime={file.mimeType} />
   </div>
 
-  <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-    <div class="rounded-md border border-surface0 bg-mantle p-4">
-      <div class="mb-3 font-mono text-[10px] uppercase tracking-wider text-overlay1">qr · mobile-to-mobile</div>
-      <div class="flex justify-center"><QrCode value={shareUrl} size={120} /></div>
-    </div>
-    <div class="rounded-md border border-surface0 bg-mantle p-4">
-      <div class="mb-3 font-mono text-[10px] uppercase tracking-wider text-overlay1">embed · markdown</div>
-      <pre class="whitespace-pre-wrap rounded bg-crust p-3 font-mono text-[11px] leading-relaxed text-text">[{file.title ?? 'file'}]({shareUrl})</pre>
-    </div>
+  <!-- QR · mobile-to-mobile — single centered card, no duplicate markdown
+       block (the share bar now exposes all copy variants directly). -->
+  <div class="mt-6 grid place-items-center rounded-md border border-surface0 bg-mantle p-5">
+    <div class="mb-3 font-mono text-[10px] uppercase tracking-wider text-overlay1">qr · mobile-to-mobile</div>
+    <QrCode value={shareUrl} size={140} />
   </div>
 </main>
