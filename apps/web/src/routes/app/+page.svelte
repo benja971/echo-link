@@ -80,14 +80,23 @@
   //   reserved by Chrome/Brave/Firefox and JS preventDefault is ignored.
   //   So workspace shortcuts use plain keys (no modifier); the hook's
   //   typing-guard prevents them from firing inside inputs.
+  // Shortcut policy:
+  // - ⌘/Ctrl+K toggles the palette (works while palette is open to close;
+  //   blocked while cheatsheet or preview is open to avoid stacking)
+  // - ?         toggles the cheatsheet (mirror of above)
+  // - O/T/1‒3   workspace actions, disabled while ANY overlay is open
+  const otherOverlayOpen = $derived(cheatsheetOpen || preview !== null);
+  const anyOverlayOpen = $derived(paletteOpen || cheatsheetOpen || preview !== null);
+
   useShortcuts(() => [
-    { key: 'k', meta: true, action: () => (paletteOpen = !paletteOpen) },
-    { key: 'k', ctrl: true, action: () => (paletteOpen = !paletteOpen) },
-    { key: '?', action: () => (cheatsheetOpen = !cheatsheetOpen) },
-    { key: 'o', action: () => document.querySelector<HTMLButtonElement>('[data-pick-trigger]')?.click() },
-    { key: 't', action: () => theme.cycle() },
+    { key: 'k', meta: true, enabled: () => !otherOverlayOpen, action: () => (paletteOpen = !paletteOpen) },
+    { key: 'k', ctrl: true, enabled: () => !otherOverlayOpen, action: () => (paletteOpen = !paletteOpen) },
+    { key: '?', enabled: () => !paletteOpen && preview === null, action: () => (cheatsheetOpen = !cheatsheetOpen) },
+    { key: 'o', enabled: () => !anyOverlayOpen, action: () => document.querySelector<HTMLButtonElement>('[data-pick-trigger]')?.click() },
+    { key: 't', enabled: () => !anyOverlayOpen, action: () => theme.cycle() },
     ...recent.map((file, i) => ({
       key: String(i + 1),
+      enabled: () => !anyOverlayOpen,
       action: () => copyLink(file)
     }))
   ]);
