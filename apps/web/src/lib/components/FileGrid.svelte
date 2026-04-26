@@ -5,10 +5,12 @@
   import { formatFileSize } from '$lib/utils/format';
   let { files, onSelect }: { files: File[]; onSelect?: (file: File) => void } = $props();
 
-  /** URL of a thumbnail-suitable image for this file, or null. */
+  /** URL of a thumbnail-suitable image for this file, or null. Prefer the
+   *  server-side webp thumbnail (256×256) when available; fall back to the
+   *  original image for legacy files uploaded before the thumb pipeline. */
   function thumbUrl(file: File): string | null {
-    if (file.mimeType.startsWith('image/')) return `/files/${file.s3Key}`;
     if (file.thumbnailS3Key) return `/files/${file.thumbnailS3Key}`;
+    if (file.mimeType.startsWith('image/')) return `/files/${file.s3Key}`;
     return null;
   }
 

@@ -46,6 +46,29 @@ export async function extractImageDimensions(buf: Buffer): Promise<{ width: numb
   }
 }
 
+/** Generate a 256×256 webp thumbnail (cover-fit) and upload it to S3.
+ *  Returns the s3 key, or null if anything fails (we never break the
+ *  upload because of a thumbnail issue). */
+export async function generateAndUploadImageThumbnail(
+  imageBuffer: Buffer,
+  fileId: string
+): Promise<string | null> {
+  try {
+    const thumb = await sharp(imageBuffer)
+      .rotate() // honor EXIF orientation
+      .resize(256, 256, { fit: 'cover', position: 'attention' })
+      .webp({ quality: 70 })
+      .toBuffer();
+    const key = `thumbnails/${fileId}.webp`;
+    const { s3PutBuffer } = await import('./s3');
+    await s3PutBuffer(key, thumb, 'image/webp');
+    return key;
+  } catch (err) {
+    console.warn('[image-thumbnail] failed:', err);
+    return null;
+  }
+}
+
 export type UploadInput = {
   filename: string;
   contentType: string;
@@ -118,6 +141,18 @@ export async function processAndStoreUpload(input: UploadInput): Promise<File> {
       const { eq } = await import('drizzle-orm');
       await getDb().update(files).set({ thumbnailS3Key: thumbKey }).where(eq(files.id, file.id));
     });
+  } else if (validated.mime.startsWith('image/')) {
+    // Sync for images — sharp resize is fast (<100ms for typical
+    // screenshots) and doing it inline lets the response carry the
+    // thumbnail key, so the workspace grid loads the small webp
+    // immediately on the next /app navigation.
+    const thumbKey = await generateAndUploadImageThumbnail(validated.buffer, file.id);
+    if (thumbKey) {
+      const { getDb, files } = await import('@echo-link/db');
+      const { eq } = await import('drizzle-orm');
+      await getDb().update(files).set({ thumbnailS3Key: thumbKey }).where(eq(files.id, file.id));
+      file.thumbnailS3Key = thumbKey;
+    }
   }
 
   return file;
