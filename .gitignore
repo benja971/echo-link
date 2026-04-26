@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-package-lock.json  # Using pnpm instead
+package-lock.json  # legacy v1 (pnpm/bun in v2)
 
 # Git worktrees
 .worktrees/
@@ -8,8 +8,9 @@ package-lock.json  # Using pnpm instead
 # Build output
 dist/
 build/
+.svelte-kit/
 
-# Frontend build output in public/
+# Frontend build output in public/ (legacy v1 only)
 public/assets/
 public/index.html
 public/vite.svg

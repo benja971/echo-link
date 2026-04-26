@@ -1,36 +1,37 @@
-version: '3.8'
-
 services:
-  echo-link:
-    build: .
-    container_name: echo-link
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: echo-link-web
     ports:
       - "3000:3000"
+    env_file: .env
     environment:
       - PORT=3000
       - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
-      - DATABASE_USERNAME=echolink
-      - DATABASE_PASSWORD=echolink
-      - DATABASE_NAME=echolink
-      - DATABASE_SSL=0
-      - DATABASE_LOGGING=0
       - S3_ENDPOINT=minio
       - S3_PORT=9000
-      - S3_USE_SSL=false
-      - S3_REGION=us-east-1
-      - S3_BUCKET_NAME=echo-link
-      - S3_FORCE_PATH_STYLE=true
-      - S3_ACCESS_KEY=minioadmin
-      - S3_SECRET_KEY=minioadmin
-      - PUBLIC_BASE_URL=http://localhost:3000
-      - CDN_PUBLIC_BASE_URL=http://localhost:3000
-      - UPLOAD_TOKEN=dev-token-change-in-production
     depends_on:
       postgres:
         condition: service_healthy
       minio:
         condition: service_healthy
+    networks:
+      - echo-link-network
+    restart: unless-stopped
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    container_name: echo-link-bot
+    env_file: .env
+    environment:
+      - ECHOLINK_BASE_URL=http://web:3000
+    depends_on:
+      - web
     networks:
       - echo-link-network
     restart: unless-stopped

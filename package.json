@@ -1,54 +1,27 @@
 {
   "name": "echo-link",
-  "version": "1.0.0",
-  "description": "Self-hosted file sharing service for Discord with MinIO backend",
-  "main": "dist/server.js",
+  "version": "2.0.0-dev",
+  "private": true,
+  "type": "module",
+  "workspaces": ["apps/web", "apps/bot", "packages/db"],
   "scripts": {
-    "build": "tsc",
-    "dev": "tsx watch src/server.ts",
-    "dev:api": "tsx watch src/server.ts",
-    "dev:bot": "tsx watch src/discord/bot.ts",
-    "dev:landing": "node landing-dev.js",
-    "start": "node dist/server.js",
-    "start:api": "node dist/server.js",
-    "start:bot": "node dist/discord/bot.js",
-    "migrate": "node -e \"require('./dist/db/migrate').runMigrations()\"",
-    "clear-all": "tsx scripts/clear-all.ts"
-  },
-  "keywords": [
-    "file-sharing",
-    "discord",
-    "minio",
-    "s3"
-  ],
-  "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "@aws-sdk/client-s3": "^3.705.0",
-    "@types/nodemailer": "^7.0.4",
-    "discord.js": "^14.25.1",
-    "dotenv": "^17.2.3",
-    "express": "^4.21.2",
-    "file-type": "^16.5.4",
-    "multer": "^1.4.5-lts.1",
-    "nodemailer": "^7.0.11",
-    "pg": "^8.13.1",
-    "sharp": "^0.34.5",
-    "uuid": "^11.0.3"
+    "dev": "bun --filter web dev",
+    "dev:bot": "bun --filter bot dev",
+    "build": "bun --filter web build && bun --filter bot build",
+    "start": "bun --filter web start",
+    "start:bot": "bun --filter bot start",
+    "db:generate": "bun --filter @echo-link/db generate",
+    "db:migrate": "bun --filter @echo-link/db migrate",
+    "db:studio": "bun --filter @echo-link/db studio",
+    "lint": "bun --filter web check",
+    "format": "prettier --write ."
   },
   "devDependencies": {
-    "@types/express": "^5.0.5",
-    "@types/multer": "^1.4.13",
-    "@types/node": "^22.19.0",
-    "@types/pg": "^8.15.6",
-    "@types/uuid": "^10.0.0",
-    "chokidar": "^5.0.0",
-    "ts-node": "^10.9.2",
-    "tsx": "^4.19.2",
-    "typescript": "^5.9.3",
-    "ws": "^8.18.3"
+    "prettier": "^3.3.0",
+    "prettier-plugin-svelte": "^3.2.0",
+    "prettier-plugin-tailwindcss": "^0.6.0"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "bun": ">=1.1.0"
   }
 }

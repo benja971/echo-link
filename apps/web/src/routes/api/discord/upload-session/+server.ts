@@ -1,0 +1,26 @@
+import type { RequestHandler } from './$types';
+import { json, error } from '@sveltejs/kit';
+import { z } from 'zod';
+import { checkBotToken, createDiscordUploadSession } from '$server/discord';
+import { env } from '$server/env';
+
+const Body = z.object({
+  discordUserId: z.string(),
+  discordChannelId: z.string(),
+  discordInteractionToken: z.string().optional()
+});
+
+export const POST: RequestHandler = async ({ request }) => {
+  const auth = request.headers.get('authorization');
+  if (!checkBotToken(auth, env().ECHOLINK_BOT_TOKEN)) throw error(401, 'unauthorized');
+
+  const parsed = Body.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) throw error(400, 'invalid body');
+
+  const session = await createDiscordUploadSession(parsed.data);
+  return json({
+    sessionId: session.token,
+    uploadUrl: `${env().PUBLIC_BASE_URL}/discord/upload/${session.token}`,
+    expiresAt: session.expiresAt
+  });
+};

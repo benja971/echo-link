@@ -1,0 +1,98 @@
+<!-- apps/web/src/lib/components/FileGrid.svelte -->
+<script lang="ts">
+  import type { File } from '@echo-link/db';
+  import { mimeKind, mimeIcon, mimeColor } from '$lib/utils/mime';
+  import { formatFileSize } from '$lib/utils/format';
+  type Props = {
+    files: File[];
+    onSelect?: (file: File) => void;
+    /** When set, the matching tile gets a strong accent ring + scale-up.
+     *  Used by parent-driven keyboard navigation (J/K) so the focused
+     *  cell follows arrow keys without focusing the button (which would
+     *  cause the browser's default focus ring + scrolling chaos). */
+    selectedId?: string | null;
+    /** Set of "marked" file ids (multi-select). Marked tiles get a
+     *  checkmark badge + filled accent corner. */
+    markedIds?: Set<string>;
+  };
+  let { files, onSelect, selectedId = null, markedIds }: Props = $props();
+
+  /** URL of a thumbnail-suitable image for this file, or null. Prefer the
+   *  server-side webp thumbnail (256×256) when available; fall back to the
+   *  original image for legacy files uploaded before the thumb pipeline. */
+  function thumbUrl(file: File): string | null {
+    if (file.thumbnailS3Key) return `/files/${file.thumbnailS3Key}`;
+    if (file.mimeType.startsWith('image/')) return `/files/${file.s3Key}`;
+    return null;
+  }
+
+  function shareUrlOf(file: File): string {
+    return `${window.location.origin}/v/${file.slug ?? file.id}`;
+  }
+
+  /** Native HTML5 drag-out: dragging a tile to another tab/app drops the
+   *  share URL. Also sets text/plain so apps that don't read uri-list
+   *  (Discord, Slack, ...) still receive the URL as text. The custom
+   *  application/x-echo-link-internal type lets useDropAnywhere ignore
+   *  the drag if it ever loops back into our own page. */
+  function onDragStart(e: DragEvent, file: File) {
+    if (!e.dataTransfer) return;
+    const url = shareUrlOf(file);
+    e.dataTransfer.effectAllowed = 'copyLink';
+    e.dataTransfer.setData('text/uri-list', url);
+    e.dataTransfer.setData('text/plain', url);
+    e.dataTransfer.setData('application/x-echo-link-internal', '1');
+  }
+</script>
+
+<div class="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
+  {#each files as file}
+    {@const kind = mimeKind(file.mimeType)}
+    {@const url = thumbUrl(file)}
+    {@const isMarked = markedIds?.has(file.id) ?? false}
+    {@const isFocused = selectedId === file.id}
+    <button
+      onclick={() => onSelect?.(file)}
+      draggable="true"
+      ondragstart={(e) => onDragStart(e, file)}
+      data-file-id={file.id}
+      class="relative aspect-square cursor-grab overflow-hidden rounded-md border bg-gradient-to-br from-surface0 to-mantle font-mono text-2xl text-{mimeColor(kind)} transition-all duration-200 [transition-timing-function:var(--ease-out-expo)] hover:-translate-y-0.5 hover:scale-[1.02] hover:border-accent active:cursor-grabbing {isFocused
+        ? 'border-accent scale-[1.04]'
+        : isMarked
+          ? 'border-accent'
+          : 'border-surface0'}"
+      style:box-shadow={isFocused
+        ? '0 0 0 2px var(--color-accent), 0 8px 24px color-mix(in oklab, var(--color-accent) 25%, transparent)'
+        : isMarked
+          ? '0 0 0 2px var(--color-accent)'
+          : ''}
+      title={`${file.title ?? file.s3Key} — drag to share`}
+    >
+      {#if url}
+        <img
+          src={url}
+          alt={file.title ?? ''}
+          loading="lazy"
+          decoding="async"
+          draggable="false"
+          class="absolute inset-0 h-full w-full object-cover"
+        />
+        <!-- subtle gradient at the bottom so the size badge stays readable over light images -->
+        <div class="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-crust/80 to-transparent"></div>
+      {:else}
+        <div class="grid h-full place-items-center">{mimeIcon(kind)}</div>
+      {/if}
+      <span class="absolute right-1.5 bottom-1 font-sans text-[10px] font-medium tracking-wide text-text [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]">
+        {formatFileSize(file.sizeBytes)}
+      </span>
+      {#if isMarked}
+        <span
+          class="absolute left-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full font-sans text-xs font-bold text-crust shadow-md"
+          style:background-color="var(--color-accent)"
+        >
+          ✓
+        </span>
+      {/if}
+    </button>
+  {/each}
+</div>
