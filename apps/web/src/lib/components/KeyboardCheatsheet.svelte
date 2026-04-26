@@ -30,6 +30,7 @@
       rows: [
         { combos: [['O']], label: 'open the file picker' },
         { combos: [['T']], label: 'cycle theme (latte → frappe → macchiato → mocha)' },
+        { combos: [['C']], label: 'copy the most recent file link' },
         { combos: [['1'], ['2'], ['3']], label: 'copy your recent file links' },
         {
           combos: [['drop']],

@@ -1,5 +1,7 @@
 <!-- apps/web/src/lib/components/Dropzone.svelte -->
 <script lang="ts">
+  import { formatShortcut } from '$lib/utils/platform';
+
   type Props = {
     onFile: (file: File) => void;
     busy?: boolean;
@@ -7,7 +9,17 @@
     sub?: string;
     anonTag?: string;
   };
-  let { onFile, busy = false, title = 'drop · paste · pick', sub = '⌘O to pick · ⌘V to paste · drop anywhere', anonTag }: Props = $props();
+  const defaultSub = $derived(
+    `${formatShortcut('V', { mod: true })} to paste · drop anywhere · O to pick`
+  );
+  let {
+    onFile,
+    busy = false,
+    title = 'drop · paste · pick',
+    sub,
+    anonTag
+  }: Props = $props();
+  const subText = $derived(sub ?? defaultSub);
 
   let input: HTMLInputElement;
 
@@ -32,7 +44,7 @@
 >
   <div class="font-mono text-3xl text-accent transition-transform duration-150 group-hover:scale-105">[ + ]</div>
   <div class="mt-3 font-mono text-base text-text">{title}</div>
-  <div class="mt-1 font-mono text-xs text-overlay1">{sub}</div>
+  <div class="mt-1 font-mono text-xs text-overlay1">{subText}</div>
   {#if anonTag}
     <div class="mt-4 inline-flex items-center gap-2 rounded-full border border-yellow/20 bg-yellow/8 px-3 py-1 font-mono text-[10px] tracking-wider text-yellow">
       <span class="grid h-3 w-3 place-items-center rounded-full bg-yellow text-[9px] font-bold text-crust">!</span>

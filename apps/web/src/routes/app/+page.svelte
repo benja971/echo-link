@@ -10,6 +10,7 @@
   import { formatShortcut } from '$lib/utils/platform';
   import { formatFileSize } from '$lib/utils/format';
   import { useDropAnywhere } from '$lib/hooks/useDropAnywhere.svelte';
+  import { useClipboardPaste } from '$lib/hooks/useClipboardPaste.svelte';
   import { useShortcuts } from '$lib/hooks/useShortcuts.svelte';
   import { theme } from '$lib/stores/theme.svelte';
   import { uploadErrorMessage, readErrorCode } from '$lib/utils/errors';
@@ -84,6 +85,7 @@
   }
 
   const dnd = useDropAnywhere(handleFile, () => !busy);
+  useClipboardPaste(handleFile, () => !busy && !anyOverlayOpen);
 
   // Note on cross-platform shortcuts:
   // - ⌘K / Ctrl+K is the only browser-safe modifier combo we use (not
@@ -106,6 +108,7 @@
     { key: '?', enabled: () => !paletteOpen && preview === null, action: () => (cheatsheetOpen = !cheatsheetOpen) },
     { key: 'o', enabled: () => !anyOverlayOpen, action: () => document.querySelector<HTMLButtonElement>('[data-pick-trigger]')?.click() },
     { key: 't', enabled: () => !anyOverlayOpen, action: () => theme.cycle() },
+    { key: 'c', enabled: () => !anyOverlayOpen, action: copyLast },
     ...recent.map((file, i) => ({
       key: String(i + 1),
       enabled: () => !anyOverlayOpen,
@@ -120,8 +123,8 @@
   <header class="flex items-center justify-between border-b border-surface0 px-7 py-4">
     <Brand />
     <div class="flex items-center gap-3">
-      <span class="text-sm text-subtext0">
-        press <span class="font-mono rounded border border-surface1 border-b-2 bg-surface0 px-1.5 py-0.5 text-xs text-text">{formatShortcut('K', { mod: true })}</span> for anything · <span class="font-mono rounded border border-surface1 border-b-2 bg-surface0 px-1.5 py-0.5 text-xs text-text">?</span> for shortcuts
+      <span class="hidden md:inline text-xs text-subtext0">
+        press <span class="font-mono rounded border border-surface1 border-b bg-surface0 px-1 py-px text-[10px] text-text">{formatShortcut('K', { mod: true })}</span> for anything · <span class="font-mono rounded border border-surface1 border-b bg-surface0 px-1 py-px text-[10px] text-text">?</span> for shortcuts
       </span>
       <span class="inline-flex items-center gap-2 rounded-full bg-surface0 px-3 py-1 font-mono text-xs text-subtext1 before:h-1.5 before:w-1.5 before:rounded-full before:bg-green before:[box-shadow:0_0_6px_var(--color-green)]">
         {data.session?.email}
