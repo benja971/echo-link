@@ -12,7 +12,10 @@ services:
     networks:
       - infra-net
     healthcheck:
-      test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/api/health']
+      # Force IPv4 — `localhost` resolves to ::1 first in alpine and the
+      # SvelteKit adapter-node listens on 0.0.0.0 (IPv4 only), so the
+      # IPv6 attempt gets ECONNREFUSED and the healthcheck fails.
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/api/health']
       interval: 30s
       timeout: 10s
       retries: 3
