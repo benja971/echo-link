@@ -23,6 +23,8 @@
   }
 </script>
 
+<!-- svelte-ignore a11y_no_static_element_interactions — drag-out is progressive
+     enhancement; primary actions (copy, more) are buttons inside this row. -->
 <div
   draggable="true"
   ondragstart={onDragStart}
