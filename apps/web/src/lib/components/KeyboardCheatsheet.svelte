@@ -43,6 +43,15 @@
       ]
     },
     {
+      title: 'all-files grid',
+      rows: [
+        { combos: [['J'], ['↓']], label: 'select next file' },
+        { combos: [['K'], ['↑']], label: 'select previous file' },
+        { combos: [['↩']], label: 'open the selected file in the preview' },
+        { combos: [['Esc']], label: 'clear the selection' }
+      ]
+    },
+    {
       title: 'in the palette',
       rows: [
         { combos: [['↑'], ['↓']], label: 'move selection up / down' },

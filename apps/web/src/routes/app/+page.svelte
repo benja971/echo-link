@@ -32,6 +32,10 @@
   let queue = $state<{ current: number; total: number } | null>(null);
   let paletteOpen = $state(false);
   let preview = $state<typeof data.files[number] | null>(null);
+  let selectedIndex = $state<number | null>(null);
+  const selectedFile = $derived(
+    selectedIndex !== null ? data.files[selectedIndex] ?? null : null
+  );
   let cheatsheetOpen = $state(false);
 
   const filesPct = $derived(
@@ -126,6 +130,23 @@
   const otherOverlayOpen = $derived(cheatsheetOpen || preview !== null);
   const anyOverlayOpen = $derived(paletteOpen || cheatsheetOpen || preview !== null);
 
+  function moveSelection(delta: number) {
+    if (allFiles.length === 0) return;
+    if (selectedIndex === null) {
+      selectedIndex = delta > 0 ? 0 : allFiles.length - 1;
+    } else {
+      const next = Math.max(0, Math.min(allFiles.length - 1, selectedIndex + delta));
+      selectedIndex = next;
+    }
+    // scroll the selected tile into view if off-screen
+    queueMicrotask(() => {
+      const id = allFiles[selectedIndex!]?.id;
+      if (!id) return;
+      const el = document.querySelector<HTMLElement>(`[data-file-id="${id}"]`);
+      el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
+  }
+
   useShortcuts(() => [
     { key: 'k', meta: true, enabled: () => !otherOverlayOpen, action: () => (paletteOpen = !paletteOpen) },
     { key: 'k', ctrl: true, enabled: () => !otherOverlayOpen, action: () => (paletteOpen = !paletteOpen) },
@@ -133,6 +154,13 @@
     { key: 'o', enabled: () => !anyOverlayOpen, action: () => document.querySelector<HTMLButtonElement>('[data-pick-trigger]')?.click() },
     { key: 't', enabled: () => !anyOverlayOpen, action: () => theme.cycle() },
     { key: 'c', enabled: () => !anyOverlayOpen, action: copyLast },
+    // Vim-style navigation in the all-files grid
+    { key: 'j', enabled: () => !anyOverlayOpen, action: () => moveSelection(+1) },
+    { key: 'k', enabled: () => !anyOverlayOpen, action: () => moveSelection(-1) },
+    { key: 'arrowdown', enabled: () => !anyOverlayOpen, action: () => moveSelection(+1) },
+    { key: 'arrowup', enabled: () => !anyOverlayOpen, action: () => moveSelection(-1) },
+    { key: 'enter', enabled: () => !anyOverlayOpen && selectedFile !== null, action: () => { if (selectedFile) preview = selectedFile; } },
+    { key: 'escape', enabled: () => !anyOverlayOpen && selectedIndex !== null, action: () => { selectedIndex = null; } },
     ...recent.map((file, i) => ({
       key: String(i + 1),
       enabled: () => !anyOverlayOpen,
@@ -242,7 +270,7 @@
         <p class="mt-1 font-mono text-xs text-overlay1">files live here for up to {data.limits.expirationDays} days, or until you delete them</p>
       </div>
     {:else}
-      <FileGrid files={allFiles} onSelect={(f) => (preview = f)} />
+      <FileGrid files={allFiles} selectedId={selectedFile?.id ?? null} onSelect={(f) => (preview = f)} />
     {/if}
   </section>
 </div>

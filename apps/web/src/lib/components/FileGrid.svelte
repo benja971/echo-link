@@ -3,7 +3,16 @@
   import type { File } from '@echo-link/db';
   import { mimeKind, mimeIcon, mimeColor } from '$lib/utils/mime';
   import { formatFileSize } from '$lib/utils/format';
-  let { files, onSelect }: { files: File[]; onSelect?: (file: File) => void } = $props();
+  type Props = {
+    files: File[];
+    onSelect?: (file: File) => void;
+    /** When set, the matching tile gets a strong accent ring + scale-up.
+     *  Used by parent-driven keyboard navigation (J/K) so the selected
+     *  cell follows arrow keys without focusing the button (which would
+     *  cause the browser's default focus ring + scrolling chaos). */
+    selectedId?: string | null;
+  };
+  let { files, onSelect, selectedId = null }: Props = $props();
 
   /** URL of a thumbnail-suitable image for this file, or null. Prefer the
    *  server-side webp thumbnail (256×256) when available; fall back to the
@@ -38,7 +47,13 @@
       onclick={() => onSelect?.(file)}
       draggable="true"
       ondragstart={(e) => onDragStart(e, file)}
-      class="relative aspect-square cursor-grab overflow-hidden rounded-md border border-surface0 bg-gradient-to-br from-surface0 to-mantle font-mono text-2xl text-{mimeColor(kind)} transition-all duration-200 [transition-timing-function:var(--ease-out-expo)] hover:-translate-y-0.5 hover:scale-[1.02] hover:border-accent active:cursor-grabbing"
+      data-file-id={file.id}
+      class="relative aspect-square cursor-grab overflow-hidden rounded-md border bg-gradient-to-br from-surface0 to-mantle font-mono text-2xl text-{mimeColor(kind)} transition-all duration-200 [transition-timing-function:var(--ease-out-expo)] hover:-translate-y-0.5 hover:scale-[1.02] hover:border-accent active:cursor-grabbing {selectedId === file.id
+        ? 'border-accent scale-[1.04]'
+        : 'border-surface0'}"
+      style:box-shadow={selectedId === file.id
+        ? '0 0 0 2px var(--color-accent), 0 8px 24px color-mix(in oklab, var(--color-accent) 25%, transparent)'
+        : ''}
       title={`${file.title ?? file.s3Key} — drag to share`}
     >
       {#if url}
