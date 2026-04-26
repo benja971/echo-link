@@ -9,13 +9,16 @@
     <meta name="theme-color" content="#1e1e2e" />
     <link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
     <script>
-      // Apply saved theme + accent before first paint to avoid FOUC.
+      // Apply saved theme + accent + detected platform before first paint
+      // to avoid FOUC and hydration mismatch on shortcut labels.
       (function () {
         try {
           var t = localStorage.getItem('theme');
           var a = localStorage.getItem('accent');
           if (t === 'latte' || t === 'frappe' || t === 'macchiato' || t === 'mocha') document.documentElement.dataset.theme = t;
           if (a) document.documentElement.dataset.accent = a;
+          var ua = navigator.userAgent || '';
+          document.documentElement.dataset.platform = /Mac|iPhone|iPad|iPod/.test(ua) ? 'mac' : 'pc';
         } catch (e) {}
       })();
     </script>

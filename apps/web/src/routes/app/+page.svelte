@@ -6,6 +6,8 @@
   import FileGrid from '$components/FileGrid.svelte';
   import CommandPalette from '$components/CommandPalette.svelte';
   import FilePreviewModal from '$components/FilePreviewModal.svelte';
+  import KeyboardCheatsheet from '$components/KeyboardCheatsheet.svelte';
+  import { formatShortcut } from '$lib/utils/platform';
   import { formatFileSize } from '$lib/utils/format';
   import { useDropAnywhere } from '$lib/hooks/useDropAnywhere.svelte';
   import { useShortcuts } from '$lib/hooks/useShortcuts.svelte';
@@ -21,6 +23,7 @@
   let uploadError = $state<string | null>(null);
   let paletteOpen = $state(false);
   let preview = $state<typeof data.files[number] | null>(null);
+  let cheatsheetOpen = $state(false);
 
   const filesPct = $derived(
     Math.min(100, Math.round((data.stats.fileCount / data.limits.maxFiles) * 100))
@@ -80,6 +83,7 @@
   useShortcuts(() => [
     { key: 'k', meta: true, action: () => (paletteOpen = !paletteOpen) },
     { key: 'k', ctrl: true, action: () => (paletteOpen = !paletteOpen) },
+    { key: '?', action: () => (cheatsheetOpen = !cheatsheetOpen) },
     { key: 'o', action: () => document.querySelector<HTMLButtonElement>('[data-pick-trigger]')?.click() },
     { key: 't', action: () => theme.cycle() },
     ...recent.map((file, i) => ({
@@ -96,7 +100,7 @@
     <Brand />
     <div class="flex items-center gap-3">
       <span class="text-sm text-subtext0">
-        press <span class="font-mono rounded border border-surface1 border-b-2 bg-surface0 px-1.5 py-0.5 text-xs text-text">⌘K</span> for anything
+        press <span class="font-mono rounded border border-surface1 border-b-2 bg-surface0 px-1.5 py-0.5 text-xs text-text">{formatShortcut('K', { mod: true })}</span> for anything · <span class="font-mono rounded border border-surface1 border-b-2 bg-surface0 px-1.5 py-0.5 text-xs text-text">?</span> for shortcuts
       </span>
       <span class="inline-flex items-center gap-2 rounded-full bg-surface0 px-3 py-1 font-mono text-xs text-subtext1 before:h-1.5 before:w-1.5 before:rounded-full before:bg-green before:[box-shadow:0_0_6px_var(--color-green)]">
         {data.session?.email}
@@ -178,6 +182,11 @@
 />
 
 <FilePreviewModal file={preview} onClose={() => (preview = null)} />
+
+<KeyboardCheatsheet
+  bind:open={cheatsheetOpen}
+  onClose={() => (cheatsheetOpen = false)}
+/>
 
 <!-- sticky tip ticker — terminal-status-bar vibe -->
 <div class="fixed inset-x-0 bottom-0 z-30 border-t border-surface0 bg-mantle/85 px-4 py-2.5 text-center backdrop-blur">
