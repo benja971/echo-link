@@ -90,7 +90,9 @@ export async function processAndStoreUpload(input: UploadInput): Promise<File> {
     const used = await anonymousUploadCount(ipHash);
     if (used >= e.ANON_MAX_PER_IP_PER_DAY) throw new UploadError('anon_rate_limited', 429);
   } else {
-    if (sizeMB > e.MAX_SIZE_MB) throw new UploadError('file_too_large', 413);
+    // No per-file size limit for authenticated users — only the total
+    // per-account quota matters. So one big 500mb video is fine if
+    // your account isn't using anything else.
     const stats = await getAccountUploadStats(input.accountId);
     if (stats.fileCount >= e.MAX_PER_USER) throw new UploadError('file_count_quota', 413);
     if (stats.totalBytes / (1024 * 1024) + sizeMB > e.MAX_SIZE_MB_PER_USER)

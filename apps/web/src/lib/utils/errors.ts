@@ -10,9 +10,9 @@ export function uploadErrorMessage(code: string): string {
     file_too_large_anon: 'file too large for anonymous upload (50mb max)',
     anon_rate_limited:
       "you've reached the anonymous upload limit from this network — try again later or sign in",
-    file_too_large: 'file too large (100mb max)',
+    file_too_large: "file too large for your remaining storage quota",
     file_count_quota: "you've reached your file count quota",
-    storage_quota: "you've reached your storage quota",
+    storage_quota: "this file would exceed your storage quota — delete some files or wait for them to expire",
     'no file': 'no file received',
     no_file: 'no file received',
     invalid_email: 'please enter a valid email address',
