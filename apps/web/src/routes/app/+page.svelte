@@ -16,6 +16,7 @@
   import { TIPS } from '$lib/utils/tips';
   import RotatingTip from '$components/RotatingTip.svelte';
   import { onMount } from 'svelte';
+  import { fly } from 'svelte/transition';
 
   let { data } = $props();
 
@@ -24,6 +25,16 @@
   let paletteOpen = $state(false);
   let preview = $state<typeof data.files[number] | null>(null);
   let cheatsheetOpen = $state(false);
+  let toast = $state<string | null>(null);
+  let toastTimer: ReturnType<typeof setTimeout> | null = null;
+  function flashToast(msg: string) {
+    if (toastTimer) clearTimeout(toastTimer);
+    toast = msg;
+    toastTimer = setTimeout(() => {
+      toast = null;
+      toastTimer = null;
+    }, 1800);
+  }
 
   const filesPct = $derived(
     Math.min(100, Math.round((data.stats.fileCount / data.limits.maxFiles) * 100))
@@ -60,6 +71,7 @@
 
   function copyLink(file: typeof data.files[number]) {
     navigator.clipboard.writeText(`${window.location.origin}/v/${file.id}`);
+    flashToast(`✓ link copied — ${file.title ?? 'file'}`);
   }
 
   async function signOut() {
@@ -196,6 +208,19 @@
   bind:open={cheatsheetOpen}
   onClose={() => (cheatsheetOpen = false)}
 />
+
+<!-- Copy/action toast — bottom-right, above the tip strip -->
+{#if toast}
+  <div
+    role="status"
+    aria-live="polite"
+    class="fixed bottom-16 right-6 z-40 max-w-sm rounded-md border border-accent/40 px-4 py-3 font-sans text-sm text-text shadow-2xl backdrop-blur"
+    style:background-color="color-mix(in oklab, var(--color-accent) 14%, var(--color-mantle))"
+    transition:fly={{ y: 16, duration: 220 }}
+  >
+    {toast}
+  </div>
+{/if}
 
 <!-- sticky tip ticker — terminal-status-bar vibe -->
 <div class="fixed inset-x-0 bottom-0 z-30 border-t border-surface0 bg-mantle/85 px-4 py-2.5 text-center backdrop-blur">
