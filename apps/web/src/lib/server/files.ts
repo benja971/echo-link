@@ -12,6 +12,20 @@ export async function getFileById(id: string): Promise<File | null> {
   return (await db.select().from(files).where(eq(files.id, id)).limit(1))[0] ?? null;
 }
 
+export async function getFileBySlug(slug: string): Promise<File | null> {
+  const db = getDb();
+  return (await db.select().from(files).where(eq(files.slug, slug)).limit(1))[0] ?? null;
+}
+
+export async function updateFileMetadata(
+  id: string,
+  patch: { title?: string | null; slug?: string | null }
+): Promise<File | null> {
+  const db = getDb();
+  const updated = await db.update(files).set(patch).where(eq(files.id, id)).returning();
+  return updated[0] ?? null;
+}
+
 export async function listFilesByAccount(accountId: string): Promise<File[]> {
   const db = getDb();
   return db

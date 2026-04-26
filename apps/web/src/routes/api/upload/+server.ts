@@ -35,7 +35,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
     return json({
       id: result.id,
-      shareUrl: `${env().PUBLIC_BASE_URL}/v/${result.id}`,
+      shareUrl: `${env().PUBLIC_BASE_URL}/v/${result.slug ?? result.id}`,
       directUrl: `${env().CDN_PUBLIC_BASE_URL}/files/${result.s3Key}`,
       mimeType: result.mimeType,
       sizeBytes: result.sizeBytes,

@@ -5,6 +5,7 @@ import { s3PutBuffer } from './s3';
 import { insertFile, getAccountUploadStats } from './files';
 import { generateAndUploadVideoThumbnail } from './thumbnails';
 import { hashIp, anonymousUploadCount } from './anonymous';
+import { deriveSlugFromTitle, findAvailableSlug } from './slug';
 import { env } from './env';
 import type { File } from '@echo-link/db';
 
@@ -120,12 +121,24 @@ export async function processAndStoreUpload(input: UploadInput): Promise<File> {
       : e.FILE_EXPIRATION_DAYS;
   const expiresAt = new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000);
 
+  const title = input.filename.replace(/\.[^.]+$/, '');
+
+  // Auto-suggest a slug from the title for authenticated uploads. Anonymous
+  // files keep the UUID-only URL — they're 24h-TTL, no workspace, no need
+  // for a pretty link. If the title has nothing usable, slug stays null.
+  let slug: string | null = null;
+  if (input.kind === 'authenticated') {
+    const candidate = deriveSlugFromTitle(title);
+    if (candidate) slug = await findAvailableSlug(candidate);
+  }
+
   const file = await insertFile({
     id,
     s3Key,
     mimeType: validated.mime,
     sizeBytes: input.buffer.byteLength,
-    title: input.filename.replace(/\.[^.]+$/, ''),
+    title,
+    slug,
     width: dimensions?.width,
     height: dimensions?.height,
     expiresAt,

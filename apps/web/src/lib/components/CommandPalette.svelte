@@ -36,7 +36,7 @@
   });
 
   function copyShare(file: File) {
-    navigator.clipboard.writeText(`${window.location.origin}/v/${file.id}`);
+    navigator.clipboard.writeText(`${window.location.origin}/v/${file.slug ?? file.id}`);
     toast.flash(`✓ link copied — ${file.title ?? 'file'}`);
     onClose();
   }

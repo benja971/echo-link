@@ -16,7 +16,7 @@
 
   function onDragStart(e: DragEvent) {
     if (!e.dataTransfer) return;
-    const url = `${window.location.origin}/v/${file.id}`;
+    const url = `${window.location.origin}/v/${file.slug ?? file.id}`;
     e.dataTransfer.effectAllowed = 'copyLink';
     e.dataTransfer.setData('text/uri-list', url);
     e.dataTransfer.setData('text/plain', url);

@@ -27,7 +27,7 @@
   }
 
   function shareUrlOf(file: File): string {
-    return `${window.location.origin}/v/${file.id}`;
+    return `${window.location.origin}/v/${file.slug ?? file.id}`;
   }
 
   /** Native HTML5 drag-out: dragging a tile to another tab/app drops the
