@@ -36,6 +36,76 @@
   const selectedFile = $derived(
     selectedIndex !== null ? data.files[selectedIndex] ?? null : null
   );
+
+  // Multi-select set (vim/gmail style — Space toggles, A selects all)
+  let markedIds = $state<Set<string>>(new Set());
+  const markedCount = $derived(markedIds.size);
+  const hasMarked = $derived(markedIds.size > 0);
+
+  // D-armed state for batch delete (single button slot, click-twice)
+  let batchDeleteArmed = $state(false);
+  let batchArmTimer: ReturnType<typeof setTimeout> | null = null;
+  let batchDeleting = $state(false);
+
+  function toggleMark(id: string) {
+    if (markedIds.has(id)) markedIds.delete(id);
+    else markedIds.add(id);
+    markedIds = new Set(markedIds); // trigger Svelte reactivity
+  }
+  function selectAll() {
+    markedIds = new Set(data.files.map((f) => f.id));
+  }
+  function clearMarked() {
+    markedIds = new Set();
+    if (batchArmTimer) {
+      clearTimeout(batchArmTimer);
+      batchArmTimer = null;
+    }
+    batchDeleteArmed = false;
+  }
+
+  async function copyMarked() {
+    const urls = data.files
+      .filter((f) => markedIds.has(f.id))
+      .map((f) => `${window.location.origin}/v/${f.id}`);
+    if (urls.length === 0) return;
+    await navigator.clipboard.writeText(urls.join('\n'));
+    toast.flash(
+      urls.length === 1 ? `✓ link copied` : `✓ ${urls.length} links copied (newline-joined)`
+    );
+  }
+
+  async function deleteMarked() {
+    if (markedIds.size === 0) return;
+    if (!batchDeleteArmed) {
+      batchDeleteArmed = true;
+      batchArmTimer = setTimeout(() => {
+        batchDeleteArmed = false;
+        batchArmTimer = null;
+      }, 3000);
+      return;
+    }
+    if (batchArmTimer) {
+      clearTimeout(batchArmTimer);
+      batchArmTimer = null;
+    }
+    batchDeleteArmed = false;
+    batchDeleting = true;
+    const ids = Array.from(markedIds);
+    let okCount = 0;
+    for (const id of ids) {
+      try {
+        const res = await fetch(`/api/files/${id}`, { method: 'DELETE' });
+        if (res.ok) okCount++;
+      } catch {
+        /* swallow per-file errors; continue */
+      }
+    }
+    batchDeleting = false;
+    clearMarked();
+    toast.flash(`✓ ${okCount} file${okCount === 1 ? '' : 's'} deleted`);
+    await invalidateAll();
+  }
   let cheatsheetOpen = $state(false);
 
   const filesPct = $derived(
@@ -153,14 +223,19 @@
     { key: '?', enabled: () => !paletteOpen && preview === null, action: () => (cheatsheetOpen = !cheatsheetOpen) },
     { key: 'o', enabled: () => !anyOverlayOpen, action: () => document.querySelector<HTMLButtonElement>('[data-pick-trigger]')?.click() },
     { key: 't', enabled: () => !anyOverlayOpen, action: () => theme.cycle() },
-    { key: 'c', enabled: () => !anyOverlayOpen, action: copyLast },
+    // C: copy marked files if any, else copy last
+    { key: 'c', enabled: () => !anyOverlayOpen, action: () => (hasMarked ? copyMarked() : copyLast()) },
     // Vim-style navigation in the all-files grid
     { key: 'j', enabled: () => !anyOverlayOpen, action: () => moveSelection(+1) },
     { key: 'k', enabled: () => !anyOverlayOpen, action: () => moveSelection(-1) },
     { key: 'arrowdown', enabled: () => !anyOverlayOpen, action: () => moveSelection(+1) },
     { key: 'arrowup', enabled: () => !anyOverlayOpen, action: () => moveSelection(-1) },
     { key: 'enter', enabled: () => !anyOverlayOpen && selectedFile !== null, action: () => { if (selectedFile) preview = selectedFile; } },
-    { key: 'escape', enabled: () => !anyOverlayOpen && selectedIndex !== null, action: () => { selectedIndex = null; } },
+    // Multi-select (vim/gmail style)
+    { key: ' ', enabled: () => !anyOverlayOpen && selectedFile !== null, action: () => { if (selectedFile) toggleMark(selectedFile.id); } },
+    { key: 'a', enabled: () => !anyOverlayOpen && allFiles.length > 0, action: selectAll },
+    { key: 'd', enabled: () => !anyOverlayOpen && hasMarked, action: deleteMarked },
+    { key: 'escape', enabled: () => !anyOverlayOpen && (selectedIndex !== null || hasMarked), action: () => { selectedIndex = null; clearMarked(); } },
     ...recent.map((file, i) => ({
       key: String(i + 1),
       enabled: () => !anyOverlayOpen,
@@ -258,9 +333,45 @@
   {/if}
 
   <section class="mx-auto mt-16 max-w-3xl px-8 pb-12">
-    <div class="mb-3 flex items-baseline justify-between font-mono text-xs text-subtext0">
-      <span>all files <span class="text-overlay0">({allFiles.length})</span></span>
-    </div>
+    {#if hasMarked}
+      <div
+        class="mb-3 flex items-center justify-between rounded-md border border-accent/40 px-4 py-2.5 font-mono text-xs"
+        style:background-color="color-mix(in oklab, var(--color-accent) 10%, transparent)"
+      >
+        <span class="text-text">{markedCount} selected</span>
+        <span class="flex items-center gap-3 text-overlay1">
+          <button
+            type="button"
+            onclick={copyMarked}
+            class="rounded border border-surface1 border-b-2 bg-surface0 px-2 py-0.5 text-text transition-colors hover:bg-surface1"
+          >C copy</button>
+          <button
+            type="button"
+            onclick={deleteMarked}
+            disabled={batchDeleting}
+            class="rounded border bg-surface0 px-2 py-0.5 transition-colors disabled:opacity-60 {batchDeleteArmed
+              ? 'border-red bg-red/15 text-red hover:bg-red/25'
+              : 'border-surface1 border-b-2 text-text hover:border-red/40 hover:text-red'}"
+          >{batchDeleting ? 'deleting…' : batchDeleteArmed ? `D delete ${markedCount}` : 'D delete'}</button>
+          <button
+            type="button"
+            onclick={clearMarked}
+            class="rounded border border-surface1 border-b-2 bg-surface0 px-2 py-0.5 text-subtext0 transition-colors hover:text-text"
+          >Esc</button>
+        </span>
+      </div>
+    {:else}
+      <div class="mb-3 flex items-baseline justify-between font-mono text-xs text-subtext0">
+        <span>all files <span class="text-overlay0">({allFiles.length})</span></span>
+        {#if allFiles.length > 0}
+          <span class="text-overlay1 text-[11px]">
+            <span class="rounded border border-surface1 border-b bg-surface0 px-1 text-[10px]">space</span> to mark
+            ·
+            <span class="rounded border border-surface1 border-b bg-surface0 px-1 text-[10px]">A</span> select all
+          </span>
+        {/if}
+      </div>
+    {/if}
     {#if allFiles.length === 0}
       <div class="grid place-items-center rounded-md border border-dashed border-surface1 bg-mantle/40 px-6 py-14 text-center">
         <div class="font-mono text-3xl text-overlay1">∅</div>
@@ -270,7 +381,12 @@
         <p class="mt-1 font-mono text-xs text-overlay1">files live here for up to {data.limits.expirationDays} days, or until you delete them</p>
       </div>
     {:else}
-      <FileGrid files={allFiles} selectedId={selectedFile?.id ?? null} onSelect={(f) => (preview = f)} />
+      <FileGrid
+        files={allFiles}
+        selectedId={selectedFile?.id ?? null}
+        {markedIds}
+        onSelect={(f) => (preview = f)}
+      />
     {/if}
   </section>
 </div>

@@ -45,10 +45,14 @@
     {
       title: 'all-files grid',
       rows: [
-        { combos: [['J'], ['↓']], label: 'select next file' },
-        { combos: [['K'], ['↑']], label: 'select previous file' },
-        { combos: [['↩']], label: 'open the selected file in the preview' },
-        { combos: [['Esc']], label: 'clear the selection' }
+        { combos: [['J'], ['↓']], label: 'focus next file' },
+        { combos: [['K'], ['↑']], label: 'focus previous file' },
+        { combos: [['↩']], label: 'open the focused file in the preview' },
+        { combos: [['space']], label: 'mark / unmark the focused file' },
+        { combos: [['A']], label: 'mark all files' },
+        { combos: [['C']], label: 'copy marked links (newline-joined), or last link' },
+        { combos: [['D']], label: 'delete marked files (press twice within 3s)' },
+        { combos: [['Esc']], label: 'clear focus + marked selection' }
       ]
     },
     {

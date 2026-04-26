@@ -7,12 +7,15 @@
     files: File[];
     onSelect?: (file: File) => void;
     /** When set, the matching tile gets a strong accent ring + scale-up.
-     *  Used by parent-driven keyboard navigation (J/K) so the selected
+     *  Used by parent-driven keyboard navigation (J/K) so the focused
      *  cell follows arrow keys without focusing the button (which would
      *  cause the browser's default focus ring + scrolling chaos). */
     selectedId?: string | null;
+    /** Set of "marked" file ids (multi-select). Marked tiles get a
+     *  checkmark badge + filled accent corner. */
+    markedIds?: Set<string>;
   };
-  let { files, onSelect, selectedId = null }: Props = $props();
+  let { files, onSelect, selectedId = null, markedIds }: Props = $props();
 
   /** URL of a thumbnail-suitable image for this file, or null. Prefer the
    *  server-side webp thumbnail (256×256) when available; fall back to the
@@ -43,17 +46,23 @@
   {#each files as file}
     {@const kind = mimeKind(file.mimeType)}
     {@const url = thumbUrl(file)}
+    {@const isMarked = markedIds?.has(file.id) ?? false}
+    {@const isFocused = selectedId === file.id}
     <button
       onclick={() => onSelect?.(file)}
       draggable="true"
       ondragstart={(e) => onDragStart(e, file)}
       data-file-id={file.id}
-      class="relative aspect-square cursor-grab overflow-hidden rounded-md border bg-gradient-to-br from-surface0 to-mantle font-mono text-2xl text-{mimeColor(kind)} transition-all duration-200 [transition-timing-function:var(--ease-out-expo)] hover:-translate-y-0.5 hover:scale-[1.02] hover:border-accent active:cursor-grabbing {selectedId === file.id
+      class="relative aspect-square cursor-grab overflow-hidden rounded-md border bg-gradient-to-br from-surface0 to-mantle font-mono text-2xl text-{mimeColor(kind)} transition-all duration-200 [transition-timing-function:var(--ease-out-expo)] hover:-translate-y-0.5 hover:scale-[1.02] hover:border-accent active:cursor-grabbing {isFocused
         ? 'border-accent scale-[1.04]'
-        : 'border-surface0'}"
-      style:box-shadow={selectedId === file.id
+        : isMarked
+          ? 'border-accent'
+          : 'border-surface0'}"
+      style:box-shadow={isFocused
         ? '0 0 0 2px var(--color-accent), 0 8px 24px color-mix(in oklab, var(--color-accent) 25%, transparent)'
-        : ''}
+        : isMarked
+          ? '0 0 0 2px var(--color-accent)'
+          : ''}
       title={`${file.title ?? file.s3Key} — drag to share`}
     >
       {#if url}
@@ -72,6 +81,14 @@
       <span class="absolute right-1.5 bottom-1 font-sans text-[10px] font-medium tracking-wide text-text [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]">
         {formatFileSize(file.sizeBytes)}
       </span>
+      {#if isMarked}
+        <span
+          class="absolute left-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full font-sans text-xs font-bold text-crust shadow-md"
+          style:background-color="var(--color-accent)"
+        >
+          ✓
+        </span>
+      {/if}
     </button>
   {/each}
 </div>
