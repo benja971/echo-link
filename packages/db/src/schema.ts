@@ -101,7 +101,10 @@ export const files = pgTable(
 
     // new in v2
     isAnonymous: boolean('is_anonymous').default(false).notNull(),
-    anonymousIpHash: text('anonymous_ip_hash')
+    anonymousIpHash: text('anonymous_ip_hash'),
+
+    // v2.1 — custom slug for shareable URL
+    slug: text('slug').unique()
   },
   (t) => [
     index('files_account_idx').on(t.accountId),
