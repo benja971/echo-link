@@ -32,6 +32,7 @@
   let queue = $state<{ current: number; total: number } | null>(null);
   let paletteOpen = $state(false);
   let preview = $state<typeof data.files[number] | null>(null);
+  let previewStartInEdit = $state(false);
   let selectedIndex = $state<number | null>(null);
   const selectedFile = $derived(
     selectedIndex !== null ? data.files[selectedIndex] ?? null : null
@@ -41,6 +42,14 @@
   let markedIds = $state<Set<string>>(new Set());
   const markedCount = $derived(markedIds.size);
   const hasMarked = $derived(markedIds.size > 0);
+  // Single-target edit candidate: prefer the only marked file, fall back
+  // to the J/K-focused tile. Drives both the `E` shortcut and the toolbar
+  // edit button. Editing isn't a batch op — visible only at count 1.
+  const editTarget = $derived(
+    markedCount === 1
+      ? data.files.find((f) => markedIds.has(f.id)) ?? null
+      : selectedFile
+  );
 
   // D-armed state for batch delete (single button slot, click-twice)
   let batchDeleteArmed = $state(false);
@@ -67,7 +76,7 @@
   async function copyMarked() {
     const urls = data.files
       .filter((f) => markedIds.has(f.id))
-      .map((f) => `${window.location.origin}/v/${f.id}`);
+      .map((f) => `${window.location.origin}/v/${f.slug ?? f.id}`);
     if (urls.length === 0) return;
     await navigator.clipboard.writeText(urls.join('\n'));
     toast.flash(
@@ -169,7 +178,7 @@
   }
 
   function copyLink(file: typeof data.files[number]) {
-    navigator.clipboard.writeText(`${window.location.origin}/v/${file.id}`);
+    navigator.clipboard.writeText(`${window.location.origin}/v/${file.slug ?? file.id}`);
     toast.flash(`✓ link copied — ${file.title ?? 'file'}`);
   }
 
@@ -230,7 +239,10 @@
     { key: 'k', enabled: () => !anyOverlayOpen, action: () => moveSelection(-1) },
     { key: 'arrowdown', enabled: () => !anyOverlayOpen, action: () => moveSelection(+1) },
     { key: 'arrowup', enabled: () => !anyOverlayOpen, action: () => moveSelection(-1) },
-    { key: 'enter', enabled: () => !anyOverlayOpen && selectedFile !== null, action: () => { if (selectedFile) preview = selectedFile; } },
+    { key: 'enter', enabled: () => !anyOverlayOpen && selectedFile !== null, action: () => { if (selectedFile) { previewStartInEdit = false; preview = selectedFile; } } },
+    // E: open in edit mode — the single marked file if one is marked,
+    // else the J/K-focused tile.
+    { key: 'e', enabled: () => !anyOverlayOpen && editTarget !== null, action: () => { if (editTarget) { previewStartInEdit = true; preview = editTarget; } } },
     // Multi-select (vim/gmail style). The enabled() guard intentionally
     // does NOT require an existing focus — pressing Space with nothing
     // focused jumps to the first file AND marks it (also stops the
@@ -354,6 +366,13 @@
       >
         <span class="text-text">{markedCount} selected</span>
         <span class="flex items-center gap-3 text-overlay1">
+          {#if markedCount === 1 && editTarget}
+            <button
+              type="button"
+              onclick={() => { previewStartInEdit = true; preview = editTarget; }}
+              class="rounded border border-surface1 border-b-2 bg-surface0 px-2 py-0.5 text-text transition-colors hover:bg-surface1"
+            >E edit</button>
+          {/if}
           <button
             type="button"
             onclick={copyMarked}
@@ -399,7 +418,7 @@
         files={allFiles}
         selectedId={selectedFile?.id ?? null}
         {markedIds}
-        onSelect={(f) => (preview = f)}
+        onSelect={(f) => { previewStartInEdit = false; preview = f; }}
       />
     {/if}
   </section>
@@ -417,9 +436,15 @@
 
 <FilePreviewModal
   file={preview}
-  onClose={() => (preview = null)}
-  onDeleted={(name) => {
+  startInEdit={previewStartInEdit}
+  onClose={() => { preview = null; previewStartInEdit = false; }}
+  onDeleted={() => {
     toast.flash(`✓ file deleted`);
+    void invalidateAll();
+  }}
+  onUpdated={(updated) => {
+    toast.flash(updated.slug ? `✓ saved — /v/${updated.slug}` : `✓ saved`);
+    preview = updated;
     void invalidateAll();
   }}
 />

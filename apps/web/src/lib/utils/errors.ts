@@ -18,7 +18,16 @@ export function uploadErrorMessage(code: string): string {
     invalid_email: 'please enter a valid email address',
     'invalid email': 'please enter a valid email address',
     unauthorized: 'you need to sign in first',
-    expired: 'this link has expired'
+    expired: 'this link has expired',
+    slug_too_short: 'slug must be at least 3 characters',
+    slug_too_long: 'slug must be at most 40 characters',
+    slug_invalid_chars: 'only lowercase letters, digits, and dashes',
+    slug_reserved: 'this slug is reserved',
+    slug_looks_like_uuid: 'slug cannot look like a UUID',
+    slug_taken: 'this slug is already in use',
+    invalid_slug: 'invalid slug',
+    title_too_long: 'title is too long (max 200 chars)',
+    invalid_title: 'invalid title'
   };
   if (map[code]) return map[code];
   return `upload failed (${code})`;
