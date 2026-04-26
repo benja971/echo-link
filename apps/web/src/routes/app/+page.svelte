@@ -187,7 +187,17 @@
     <div class="mb-3 flex items-baseline justify-between font-mono text-xs text-subtext0">
       <span>all files <span class="text-overlay0">({allFiles.length})</span></span>
     </div>
-    <FileGrid files={allFiles} onSelect={(f) => (preview = f)} />
+    {#if allFiles.length === 0}
+      <div class="grid place-items-center rounded-md border border-dashed border-surface1 bg-mantle/40 px-6 py-14 text-center">
+        <div class="font-mono text-3xl text-overlay1">∅</div>
+        <p class="mt-3 font-sans text-sm text-subtext0">
+          no files yet. drop one above, paste a screenshot, or press <span class="font-mono rounded border border-surface1 border-b bg-surface0 px-1 py-px text-[11px] text-text">O</span>
+        </p>
+        <p class="mt-1 font-mono text-xs text-overlay1">files live here for up to {data.limits.expirationDays} days, or until you delete them</p>
+      </div>
+    {:else}
+      <FileGrid files={allFiles} onSelect={(f) => (preview = f)} />
+    {/if}
   </section>
 </div>
 

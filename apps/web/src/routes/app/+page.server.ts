@@ -15,7 +15,8 @@ export const load: PageServerLoad = async ({ locals }) => {
     stats,
     limits: {
       maxFiles: e.MAX_PER_USER,
-      maxBytes: e.MAX_SIZE_MB_PER_USER * 1024 * 1024
+      maxBytes: e.MAX_SIZE_MB_PER_USER * 1024 * 1024,
+      expirationDays: e.FILE_EXPIRATION_DAYS
     }
   };
 };
