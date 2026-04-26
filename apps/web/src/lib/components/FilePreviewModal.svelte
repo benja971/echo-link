@@ -22,7 +22,11 @@
   let copied = $state(false);
   let deleting = $state(false);
   let deleteError = $state<string | null>(null);
-  let confirmingDelete = $state(false);
+  /** Click-twice confirm: first click arms (label switches), second click
+   *  actually deletes. Reverts to idle after 3s of inactivity. Same button
+   *  slot — no layout shift. */
+  let deleteArmed = $state(false);
+  let armTimer: ReturnType<typeof setTimeout> | null = null;
 
   async function copyLink() {
     if (!shareUrl) return;
@@ -31,8 +35,23 @@
     setTimeout(() => (copied = false), 1400);
   }
 
-  async function doDelete() {
+  function clearArm() {
+    if (armTimer) clearTimeout(armTimer);
+    armTimer = null;
+    deleteArmed = false;
+  }
+
+  async function onDeleteClick() {
     if (!file) return;
+    if (!deleteArmed) {
+      deleteArmed = true;
+      armTimer = setTimeout(() => {
+        deleteArmed = false;
+        armTimer = null;
+      }, 3000);
+      return;
+    }
+    clearArm();
     deleting = true;
     deleteError = null;
     try {
@@ -49,9 +68,13 @@
       deleteError = e instanceof Error ? e.message : 'delete failed';
     } finally {
       deleting = false;
-      confirmingDelete = false;
     }
   }
+
+  // Reset arm state if the modal closes or switches files
+  $effect(() => {
+    if (!file) clearArm();
+  });
 
   onMount(() => {
     function onKey(e: KeyboardEvent) {
@@ -131,33 +154,23 @@
         </div>
         <div class="flex shrink-0 gap-2">
           {#if onDeleted}
-            {#if confirmingDelete}
-              <button
-                type="button"
-                onclick={doDelete}
-                disabled={deleting}
-                class="inline-flex items-center rounded-md border border-red bg-red/15 px-3 py-2 font-mono text-xs text-red transition-colors hover:bg-red/25 disabled:opacity-60"
-              >
-                {deleting ? 'deleting…' : '✕ confirm delete'}
-              </button>
-              <button
-                type="button"
-                onclick={() => (confirmingDelete = false)}
-                disabled={deleting}
-                class="inline-flex items-center rounded-md border border-surface1 bg-surface0 px-3 py-2 font-mono text-xs text-subtext1 transition-colors hover:bg-surface1 hover:text-text"
-              >
-                cancel
-              </button>
-            {:else}
-              <button
-                type="button"
-                onclick={() => (confirmingDelete = true)}
-                title="delete this file permanently"
-                class="inline-flex items-center rounded-md border border-surface1 bg-surface0 px-3 py-2 font-mono text-xs text-subtext1 transition-colors hover:border-red/40 hover:bg-red/10 hover:text-red"
-              >
+            <button
+              type="button"
+              onclick={onDeleteClick}
+              disabled={deleting}
+              title={deleteArmed ? 'click again within 3s to confirm' : 'delete this file permanently'}
+              class="inline-flex min-w-[7.5rem] items-center justify-center rounded-md border px-3 py-2 font-mono text-xs transition-colors disabled:opacity-60 {deleteArmed
+                ? 'border-red bg-red/15 text-red hover:bg-red/25'
+                : 'border-surface1 bg-surface0 text-subtext1 hover:border-red/40 hover:bg-red/10 hover:text-red'}"
+            >
+              {#if deleting}
+                deleting…
+              {:else if deleteArmed}
+                ✕ click again
+              {:else}
                 ✕ delete
-              </button>
-            {/if}
+              {/if}
+            </button>
           {/if}
           <a
             href={fileUrl}

@@ -13,7 +13,9 @@
   import { useClipboardPaste } from '$lib/hooks/useClipboardPaste.svelte';
   import { useShortcuts } from '$lib/hooks/useShortcuts.svelte';
   import { theme } from '$lib/stores/theme.svelte';
-  import { uploadErrorMessage, readErrorCode } from '$lib/utils/errors';
+  import { toast } from '$lib/stores/toast.svelte';
+  import { uploadErrorMessage } from '$lib/utils/errors';
+  import { uploadFileWithProgress, type UploadProgress } from '$lib/utils/upload-with-progress';
   import { TIPS } from '$lib/utils/tips';
   import RotatingTip from '$components/RotatingTip.svelte';
   import { onMount } from 'svelte';
@@ -24,19 +26,11 @@
 
   let busy = $state(false);
   let uploadError = $state<string | null>(null);
+  let uploadProgress = $state<UploadProgress | null>(null);
+  let uploadingFileName = $state<string | null>(null);
   let paletteOpen = $state(false);
   let preview = $state<typeof data.files[number] | null>(null);
   let cheatsheetOpen = $state(false);
-  let toast = $state<string | null>(null);
-  let toastTimer: ReturnType<typeof setTimeout> | null = null;
-  function flashToast(msg: string) {
-    if (toastTimer) clearTimeout(toastTimer);
-    toast = msg;
-    toastTimer = setTimeout(() => {
-      toast = null;
-      toastTimer = null;
-    }, 1800);
-  }
 
   const filesPct = $derived(
     Math.min(100, Math.round((data.stats.fileCount / data.limits.maxFiles) * 100))
@@ -53,27 +47,32 @@
   async function handleFile(file: File) {
     busy = true;
     uploadError = null;
+    uploadingFileName = file.name;
+    uploadProgress = { loaded: 0, total: file.size, pct: 0 };
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      const res = await fetch('/api/upload', { method: 'POST', body: fd });
-      if (!res.ok) {
-        uploadError = uploadErrorMessage(await readErrorCode(res));
+      const result = await uploadFileWithProgress(file, '/api/upload', (p) => {
+        uploadProgress = p;
+      });
+      if (!result.ok) {
+        uploadError = uploadErrorMessage(result.errorCode ?? `http ${result.status}`);
         return;
       }
-      const out = await res.json();
+      const out = result.body as { shareUrl: string; title?: string };
       await navigator.clipboard.writeText(out.shareUrl);
-      window.location.reload();
+      toast.flash(`✓ uploaded — link copied`);
+      await invalidateAll();
     } catch (e) {
       uploadError = e instanceof Error ? e.message : 'upload failed — network error';
     } finally {
       busy = false;
+      uploadProgress = null;
+      uploadingFileName = null;
     }
   }
 
   function copyLink(file: typeof data.files[number]) {
     navigator.clipboard.writeText(`${window.location.origin}/v/${file.id}`);
-    flashToast(`✓ link copied — ${file.title ?? 'file'}`);
+    toast.flash(`✓ link copied — ${file.title ?? 'file'}`);
   }
 
   async function signOut() {
@@ -162,6 +161,26 @@
 
   <section class="mx-auto mt-7 max-w-3xl px-8">
     <Dropzone onFile={handleFile} {busy} />
+    {#if uploadProgress}
+      <div class="mt-3 rounded-md border border-surface0 bg-mantle p-3">
+        <div class="mb-2 flex items-baseline justify-between font-mono text-xs">
+          <span class="truncate text-subtext1">
+            uploading <span class="text-text">{uploadingFileName}</span>…
+          </span>
+          <span class="ml-3 shrink-0 text-text">{uploadProgress.pct}%</span>
+        </div>
+        <div class="h-1.5 overflow-hidden rounded-full bg-surface0">
+          <div
+            class="h-full transition-[width] duration-150"
+            style:width="{uploadProgress.pct}%"
+            style:background-color="var(--color-accent)"
+          ></div>
+        </div>
+        <div class="mt-1 font-mono text-[11px] text-overlay1">
+          {formatFileSize(uploadProgress.loaded)} / {formatFileSize(uploadProgress.total)}
+        </div>
+      </div>
+    {/if}
     {#if uploadError}
       <div class="mt-3 rounded-md border border-red/30 bg-red/5 p-3 font-mono text-sm text-red">
         {uploadError}
@@ -220,7 +239,7 @@
   file={preview}
   onClose={() => (preview = null)}
   onDeleted={(name) => {
-    flashToast(`✓ file deleted`);
+    toast.flash(`✓ file deleted`);
     void invalidateAll();
   }}
 />
@@ -231,7 +250,7 @@
 />
 
 <!-- Copy/action toast — bottom-right, above the tip strip -->
-{#if toast}
+{#if toast.message}
   <div
     role="status"
     aria-live="polite"
@@ -239,7 +258,7 @@
     style:background-color="color-mix(in oklab, var(--color-accent) 14%, var(--color-mantle))"
     transition:fly={{ y: 16, duration: 220 }}
   >
-    {toast}
+    {toast.message}
   </div>
 {/if}
 

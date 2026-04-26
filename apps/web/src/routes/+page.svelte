@@ -2,34 +2,42 @@
 <script lang="ts">
   import Brand from '$components/Brand.svelte';
   import Dropzone from '$components/Dropzone.svelte';
-  import { uploadErrorMessage, readErrorCode } from '$lib/utils/errors';
+  import { uploadErrorMessage } from '$lib/utils/errors';
   import { useDropAnywhere } from '$lib/hooks/useDropAnywhere.svelte';
   import { useClipboardPaste } from '$lib/hooks/useClipboardPaste.svelte';
+  import { uploadFileWithProgress, type UploadProgress } from '$lib/utils/upload-with-progress';
+  import { formatFileSize } from '$lib/utils/format';
 
   let { data } = $props();
   let busy = $state(false);
   let result = $state<{ shareUrl: string; title: string } | null>(null);
   let error = $state<string | null>(null);
+  let progress = $state<UploadProgress | null>(null);
+  let progressFileName = $state<string | null>(null);
 
   async function handleFile(file: File) {
     busy = true;
     error = null;
     result = null;
+    progressFileName = file.name;
+    progress = { loaded: 0, total: file.size, pct: 0 };
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const res = await uploadFileWithProgress(file, '/api/upload', (p) => {
+        progress = p;
+      });
       if (!res.ok) {
-        error = uploadErrorMessage(await readErrorCode(res));
+        error = uploadErrorMessage(res.errorCode ?? `http ${res.status}`);
         return;
       }
-      const out = await res.json();
-      result = { shareUrl: out.shareUrl, title: out.title };
+      const out = res.body as { shareUrl: string; title?: string };
+      result = { shareUrl: out.shareUrl, title: out.title ?? file.name };
       await navigator.clipboard.writeText(out.shareUrl);
     } catch (e) {
       error = e instanceof Error ? e.message : 'upload failed — network error';
     } finally {
       busy = false;
+      progress = null;
+      progressFileName = null;
     }
   }
 
@@ -83,6 +91,26 @@
     </div>
   {/if}
 
+  {#if progress}
+    <div class="mt-4 rounded-md border border-surface0 bg-mantle p-4">
+      <div class="mb-2 flex items-baseline justify-between font-mono text-xs">
+        <span class="truncate text-subtext1">
+          uploading <span class="text-text">{progressFileName}</span>…
+        </span>
+        <span class="ml-3 shrink-0 text-text">{progress.pct}%</span>
+      </div>
+      <div class="h-1.5 overflow-hidden rounded-full bg-surface0">
+        <div
+          class="h-full transition-[width] duration-150"
+          style:width="{progress.pct}%"
+          style:background-color="var(--color-accent)"
+        ></div>
+      </div>
+      <div class="mt-1 font-mono text-[11px] text-overlay1">
+        {formatFileSize(progress.loaded)} / {formatFileSize(progress.total)}
+      </div>
+    </div>
+  {/if}
   {#if result}
     <div class="mt-4 rounded-md border border-green/30 bg-green/5 p-4 font-mono text-sm">
       <div class="text-green">✓ uploaded — link copied</div>

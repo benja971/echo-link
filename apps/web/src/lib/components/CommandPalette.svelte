@@ -2,6 +2,7 @@
 <script lang="ts">
   import type { File } from '@echo-link/db';
   import { theme, ACCENTS, THEMES, type Accent, type Theme } from '$lib/stores/theme.svelte';
+  import { toast } from '$lib/stores/toast.svelte';
 
   type Action = {
     id: string;
@@ -36,6 +37,7 @@
 
   function copyShare(file: File) {
     navigator.clipboard.writeText(`${window.location.origin}/v/${file.id}`);
+    toast.flash(`✓ link copied — ${file.title ?? 'file'}`);
     onClose();
   }
 
