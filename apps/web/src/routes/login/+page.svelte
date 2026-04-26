@@ -1,6 +1,8 @@
 <!-- apps/web/src/routes/login/+page.svelte -->
 <script lang="ts">
   import Brand from '$components/Brand.svelte';
+  import { uploadErrorMessage, readErrorCode } from '$lib/utils/errors';
+
   let email = $state('');
   let sent = $state(false);
   let busy = $state(false);
@@ -17,10 +19,12 @@
         body: JSON.stringify({ email })
       });
       if (!res.ok) {
-        error = await res.text();
+        error = uploadErrorMessage(await readErrorCode(res));
         return;
       }
       sent = true;
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'network error — try again';
     } finally {
       busy = false;
     }
