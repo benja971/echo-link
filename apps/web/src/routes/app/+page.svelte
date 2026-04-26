@@ -28,6 +28,8 @@
   let uploadError = $state<string | null>(null);
   let uploadProgress = $state<UploadProgress | null>(null);
   let uploadingFileName = $state<string | null>(null);
+  /** When uploading multiple files in sequence, exposes `current of total`. */
+  let queue = $state<{ current: number; total: number } | null>(null);
   let paletteOpen = $state(false);
   let preview = $state<typeof data.files[number] | null>(null);
   let cheatsheetOpen = $state(false);
@@ -44,29 +46,51 @@
 
   onMount(() => theme.init());
 
-  async function handleFile(file: File) {
+  async function handleFiles(files: File[]) {
+    if (files.length === 0) return;
     busy = true;
     uploadError = null;
-    uploadingFileName = file.name;
-    uploadProgress = { loaded: 0, total: file.size, pct: 0 };
-    try {
-      const result = await uploadFileWithProgress(file, '/api/upload', (p) => {
-        uploadProgress = p;
-      });
-      if (!result.ok) {
-        uploadError = uploadErrorMessage(result.errorCode ?? `http ${result.status}`);
-        return;
+    queue = files.length > 1 ? { current: 0, total: files.length } : null;
+    let lastShareUrl: string | null = null;
+    let okCount = 0;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]!;
+      if (queue) queue.current = i + 1;
+      uploadingFileName = file.name;
+      uploadProgress = { loaded: 0, total: file.size, pct: 0 };
+      try {
+        const result = await uploadFileWithProgress(file, '/api/upload', (p) => {
+          uploadProgress = p;
+        });
+        if (!result.ok) {
+          uploadError = uploadErrorMessage(result.errorCode ?? `http ${result.status}`);
+          break; // stop the queue on first failure
+        }
+        const out = result.body as { shareUrl: string; title?: string };
+        lastShareUrl = out.shareUrl;
+        okCount++;
+      } catch (e) {
+        uploadError = e instanceof Error ? e.message : 'upload failed — network error';
+        break;
       }
-      const out = result.body as { shareUrl: string; title?: string };
-      await navigator.clipboard.writeText(out.shareUrl);
-      toast.flash(`✓ uploaded — link copied`);
+    }
+
+    uploadProgress = null;
+    uploadingFileName = null;
+    queue = null;
+    busy = false;
+
+    if (okCount > 0) {
+      // Copy the LAST URL to clipboard (matches single-file behavior); for
+      // batches the user can always click any tile to grab a specific link.
+      if (lastShareUrl) await navigator.clipboard.writeText(lastShareUrl);
+      toast.flash(
+        okCount === 1
+          ? `✓ uploaded — link copied`
+          : `✓ ${okCount} files uploaded — last link copied`
+      );
       await invalidateAll();
-    } catch (e) {
-      uploadError = e instanceof Error ? e.message : 'upload failed — network error';
-    } finally {
-      busy = false;
-      uploadProgress = null;
-      uploadingFileName = null;
     }
   }
 
@@ -84,8 +108,8 @@
     if (recent[0]) copyLink(recent[0]);
   }
 
-  const dnd = useDropAnywhere(handleFile, () => !busy);
-  useClipboardPaste(handleFile, () => !busy && !anyOverlayOpen);
+  const dnd = useDropAnywhere(handleFiles, () => !busy);
+  useClipboardPaste(handleFiles, () => !busy && !anyOverlayOpen);
 
   // Note on cross-platform shortcuts:
   // - ⌘K / Ctrl+K is the only browser-safe modifier combo we use (not
@@ -160,11 +184,14 @@
   </section>
 
   <section class="mx-auto mt-7 max-w-3xl px-8">
-    <Dropzone onFile={handleFile} {busy} />
+    <Dropzone onFiles={handleFiles} {busy} />
     {#if uploadProgress}
       <div class="mt-3 rounded-md border border-surface0 bg-mantle p-3">
         <div class="mb-2 flex items-baseline justify-between font-mono text-xs">
           <span class="truncate text-subtext1">
+            {#if queue}
+              <span class="text-overlay1">{queue.current} / {queue.total} ·</span>
+            {/if}
             uploading <span class="text-text">{uploadingFileName}</span>…
           </span>
           <span class="ml-3 shrink-0 text-text">{uploadProgress.pct}%</span>

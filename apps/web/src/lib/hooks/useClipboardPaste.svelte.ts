@@ -1,12 +1,12 @@
 import { onMount } from 'svelte';
 
-/** Listens to document-level `paste` events and forwards any pasted file
- *  (typically a clipboard image / screenshot) to `onFile`. The browser only
+/** Listens to document-level `paste` events and forwards any pasted files
+ *  (typically a clipboard image / screenshot) to `onFiles`. The browser only
  *  exposes file data via clipboardData when the paste happens outside an
  *  editable element, so we ignore pastes whose target is an input/textarea
  *  or contenteditable (those should accept the user's text paste). */
 export function useClipboardPaste(
-  onFile: (file: File) => void,
+  onFiles: (files: File[]) => void,
   enabled: () => boolean = () => true
 ) {
   onMount(() => {
@@ -24,15 +24,16 @@ export function useClipboardPaste(
       const items = e.clipboardData?.items;
       if (!items) return;
 
+      const files: File[] = [];
       for (const item of items) {
         if (item.kind === 'file') {
           const file = item.getAsFile();
-          if (file) {
-            e.preventDefault();
-            onFile(file);
-            return;
-          }
+          if (file) files.push(file);
         }
+      }
+      if (files.length > 0) {
+        e.preventDefault();
+        onFiles(files);
       }
     }
 

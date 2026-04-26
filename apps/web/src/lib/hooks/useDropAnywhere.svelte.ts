@@ -1,7 +1,10 @@
 // apps/web/src/lib/hooks/useDropAnywhere.svelte.ts
 import { onMount } from 'svelte';
 
-export function useDropAnywhere(onFile: (file: File) => void, enabled: () => boolean = () => true) {
+export function useDropAnywhere(
+  onFiles: (files: File[]) => void,
+  enabled: () => boolean = () => true
+) {
   let dragging = $state(false);
 
   onMount(() => {
@@ -27,8 +30,8 @@ export function useDropAnywhere(onFile: (file: File) => void, enabled: () => boo
       e.preventDefault();
       counter = 0;
       dragging = false;
-      const f = e.dataTransfer?.files?.[0];
-      if (f) onFile(f);
+      const files = Array.from(e.dataTransfer?.files ?? []);
+      if (files.length > 0) onFiles(files);
     };
 
     document.addEventListener('dragenter', onDragEnter);

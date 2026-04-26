@@ -3,21 +3,24 @@
   import { formatShortcut } from '$lib/utils/platform';
 
   type Props = {
-    onFile: (file: File) => void;
+    onFiles: (files: File[]) => void;
     busy?: boolean;
     title?: string;
     sub?: string;
     anonTag?: string;
+    /** Allow selecting multiple files at once via the picker. */
+    multiple?: boolean;
   };
   const defaultSub = $derived(
     `${formatShortcut('V', { mod: true })} to paste · drop anywhere · O to pick`
   );
   let {
-    onFile,
+    onFiles,
     busy = false,
     title = 'drop · paste · pick',
     sub,
-    anonTag
+    anonTag,
+    multiple = true
   }: Props = $props();
   const subText = $derived(sub ?? defaultSub);
 
@@ -29,8 +32,8 @@
 
   function onChange(e: Event) {
     const target = e.currentTarget as HTMLInputElement;
-    const file = target.files?.[0];
-    if (file) onFile(file);
+    const files = Array.from(target.files ?? []);
+    if (files.length > 0) onFiles(files);
     target.value = '';
   }
 </script>
@@ -57,6 +60,7 @@
   bind:this={input}
   type="file"
   hidden
+  {multiple}
   accept="image/*,video/*,audio/*,application/pdf,application/zip"
   onchange={onChange}
 />

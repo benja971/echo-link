@@ -14,35 +14,52 @@
   let error = $state<string | null>(null);
   let progress = $state<UploadProgress | null>(null);
   let progressFileName = $state<string | null>(null);
+  let queue = $state<{ current: number; total: number } | null>(null);
 
-  async function handleFile(file: File) {
+  async function handleFiles(files: File[]) {
+    if (files.length === 0) return;
     busy = true;
     error = null;
     result = null;
-    progressFileName = file.name;
-    progress = { loaded: 0, total: file.size, pct: 0 };
-    try {
-      const res = await uploadFileWithProgress(file, '/api/upload', (p) => {
-        progress = p;
-      });
-      if (!res.ok) {
-        error = uploadErrorMessage(res.errorCode ?? `http ${res.status}`);
-        return;
+    queue = files.length > 1 ? { current: 0, total: files.length } : null;
+    let lastResult: { shareUrl: string; title: string } | null = null;
+    let okCount = 0;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]!;
+      if (queue) queue.current = i + 1;
+      progressFileName = file.name;
+      progress = { loaded: 0, total: file.size, pct: 0 };
+      try {
+        const res = await uploadFileWithProgress(file, '/api/upload', (p) => {
+          progress = p;
+        });
+        if (!res.ok) {
+          error = uploadErrorMessage(res.errorCode ?? `http ${res.status}`);
+          break;
+        }
+        const out = res.body as { shareUrl: string; title?: string };
+        lastResult = { shareUrl: out.shareUrl, title: out.title ?? file.name };
+        okCount++;
+      } catch (e) {
+        error = e instanceof Error ? e.message : 'upload failed — network error';
+        break;
       }
-      const out = res.body as { shareUrl: string; title?: string };
-      result = { shareUrl: out.shareUrl, title: out.title ?? file.name };
-      await navigator.clipboard.writeText(out.shareUrl);
-    } catch (e) {
-      error = e instanceof Error ? e.message : 'upload failed — network error';
-    } finally {
-      busy = false;
-      progress = null;
-      progressFileName = null;
+    }
+
+    progress = null;
+    progressFileName = null;
+    queue = null;
+    busy = false;
+
+    if (okCount > 0 && lastResult) {
+      result = lastResult;
+      await navigator.clipboard.writeText(lastResult.shareUrl);
     }
   }
 
-  const dnd = useDropAnywhere(handleFile, () => !busy);
-  useClipboardPaste(handleFile, () => !busy);
+  const dnd = useDropAnywhere(handleFiles, () => !busy);
+  useClipboardPaste(handleFiles, () => !busy);
 </script>
 
 <svelte:head>
@@ -79,7 +96,7 @@
 <section class="mx-auto max-w-xl px-8">
   {#if data.anonEnabled}
     <Dropzone
-      onFile={handleFile}
+      onFiles={handleFiles}
       {busy}
       title="drop a file to try it"
       sub="or click · or paste · or ⌘O"
@@ -95,6 +112,9 @@
     <div class="mt-4 rounded-md border border-surface0 bg-mantle p-4">
       <div class="mb-2 flex items-baseline justify-between font-mono text-xs">
         <span class="truncate text-subtext1">
+          {#if queue}
+            <span class="text-overlay1">{queue.current} / {queue.total} ·</span>
+          {/if}
           uploading <span class="text-text">{progressFileName}</span>…
         </span>
         <span class="ml-3 shrink-0 text-text">{progress.pct}%</span>
