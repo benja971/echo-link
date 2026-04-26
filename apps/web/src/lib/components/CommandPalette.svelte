@@ -40,8 +40,8 @@
   }
 
   const actionGroup = $derived<Action[]>([
-    { id: 'upload', label: 'upload a file', badge: 'drop · paste · pick', icon: '↑', shortcut: '⌘O', onSelect: () => { onUpload(); onClose(); } },
-    { id: 'copy-last', label: 'copy last link', icon: '⎘', shortcut: '⌘⇧C', onSelect: () => { onCopyLast(); onClose(); } }
+    { id: 'upload', label: 'upload a file', badge: 'drop · paste · pick', icon: '↑', shortcut: 'O', onSelect: () => { onUpload(); onClose(); } },
+    { id: 'copy-last', label: 'copy last link', icon: '⎘', onSelect: () => { onCopyLast(); onClose(); } }
   ]);
 
   const fileMatches = $derived(
@@ -58,7 +58,7 @@
       label: 'cycle theme',
       badge: `current: ${theme.current}`,
       icon: '◐',
-      shortcut: '⌘T',
+      shortcut: 'T',
       onSelect: () => { theme.cycle(); }
     }
   ]);

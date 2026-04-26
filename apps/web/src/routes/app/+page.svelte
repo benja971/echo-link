@@ -70,14 +70,20 @@
 
   const dnd = useDropAnywhere(handleFile, () => !busy);
 
+  // Note on cross-platform shortcuts:
+  // - ⌘K / Ctrl+K is the only browser-safe modifier combo we use (not
+  //   reserved on any major browser).
+  // - Ctrl+T (new tab), Ctrl+1‒9 (switch tabs), Ctrl+O (open file) are
+  //   reserved by Chrome/Brave/Firefox and JS preventDefault is ignored.
+  //   So workspace shortcuts use plain keys (no modifier); the hook's
+  //   typing-guard prevents them from firing inside inputs.
   useShortcuts(() => [
     { key: 'k', meta: true, action: () => (paletteOpen = !paletteOpen) },
     { key: 'k', ctrl: true, action: () => (paletteOpen = !paletteOpen) },
-    { key: 'o', meta: true, action: () => document.querySelector<HTMLButtonElement>('[data-pick-trigger]')?.click() },
-    { key: 't', meta: true, action: () => theme.toggle() },
+    { key: 'o', action: () => document.querySelector<HTMLButtonElement>('[data-pick-trigger]')?.click() },
+    { key: 't', action: () => theme.cycle() },
     ...recent.map((file, i) => ({
       key: String(i + 1),
-      meta: true,
       action: () => copyLink(file)
     }))
   ]);
@@ -139,11 +145,11 @@
       <div class="mb-3.5 flex items-baseline justify-between px-1 font-mono text-xs text-subtext0">
         <span class="before:text-overlay0 before:content-['//_']">recent</span>
         <span class="text-overlay1 text-[11px]">
-          press <span class="rounded border border-surface1 border-b-2 bg-surface0 px-1 text-[10px]">⌘1</span><span class="rounded border border-surface1 border-b-2 bg-surface0 px-1 text-[10px]">‒</span><span class="rounded border border-surface1 border-b-2 bg-surface0 px-1 text-[10px]">3</span> to copy
+          press <span class="rounded border border-surface1 border-b-2 bg-surface0 px-1 text-[10px]">1</span> <span class="rounded border border-surface1 border-b-2 bg-surface0 px-1 text-[10px]">2</span> <span class="rounded border border-surface1 border-b-2 bg-surface0 px-1 text-[10px]">3</span> to copy
         </span>
       </div>
       {#each recent as file, i}
-        <FileRow {file} shortcutLabel={`⌘${i + 1}`} onCopy={copyLink} delay={(i + 1) * 100} />
+        <FileRow {file} shortcutLabel={`${i + 1}`} onCopy={copyLink} delay={(i + 1) * 100} />
       {/each}
     </section>
   {/if}

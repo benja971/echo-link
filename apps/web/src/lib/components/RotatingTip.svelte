@@ -19,12 +19,16 @@
     return () => clearInterval(timer);
   });
 
-  // Render `⌘X` / `⌘N` / `⇧` segments as small kbd-styled badges.
+  // Render `<TOKEN>` segments as small kbd-styled badges. Use this syntax
+  // in TIPS rather than relying on heuristic detection of bare letters.
+  function escapeHtml(s: string) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
   function renderTip(t: string) {
-    return t.replace(
-      /(⌘[A-Z0-9]|⌘V|⌘O|⌘K|⌘T|⌘1|⌘2|⌘3|⇧|↩|esc)/g,
-      '<kbd class="font-mono rounded border border-surface1 border-b-2 bg-surface0 px-1.5 py-px text-xs text-text">$1</kbd>'
-    );
+    return t.replace(/<([^<>\s]+)>/g, (_, token: string) => {
+      const safe = escapeHtml(token);
+      return `<kbd class="font-mono rounded border border-surface1 border-b-2 bg-surface0 px-1.5 py-px text-xs text-text">${safe}</kbd>`;
+    });
   }
 </script>
 
