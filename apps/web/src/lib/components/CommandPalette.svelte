@@ -193,7 +193,7 @@
         bind:value={query}
         aria-label="Search files or commands"
         placeholder="Search files, run commands…"
-        class="min-w-0 flex-1 bg-transparent font-sans text-base text-text placeholder:text-overlay1 caret-accent focus:outline-none"
+        class="cp-search min-w-0 flex-1 bg-transparent font-sans text-base text-text placeholder:text-overlay1 caret-accent"
       />
       <button
         type="button"
@@ -406,6 +406,14 @@
 {/if}
 
 <style>
+  .cp-search {
+    border-bottom: 1px solid transparent;
+  }
+  .cp-search:focus-visible {
+    outline: none;
+    border-bottom-color: var(--color-accent);
+  }
+
   .cp-modal::backdrop {
     background: color-mix(in srgb, var(--color-crust) 80%, transparent);
   }
