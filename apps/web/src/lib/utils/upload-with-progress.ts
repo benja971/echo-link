@@ -19,18 +19,19 @@ export type UploadResult = {
 export function uploadFileWithProgress(
   file: File,
   endpoint: string,
-  onProgress?: (p: UploadProgress) => void
+  onProgress?: (p: UploadProgress) => void,
 ): Promise<UploadResult> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', endpoint);
+    xhr.open("POST", endpoint);
+    xhr.setRequestHeader("X-Upload-Size", String(file.size));
 
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && onProgress) {
         onProgress({
           loaded: e.loaded,
           total: e.total,
-          pct: Math.min(100, Math.round((e.loaded / e.total) * 100))
+          pct: Math.min(100, Math.round((e.loaded / e.total) * 100)),
         });
       }
     };
@@ -45,17 +46,17 @@ export function uploadFileWithProgress(
       const ok = xhr.status >= 200 && xhr.status < 300;
       const errorCode = ok
         ? undefined
-        : (typeof body === 'object' && body !== null && 'message' in body
-            ? String((body as { message: unknown }).message)
-            : `http ${xhr.status}`);
+        : typeof body === "object" && body !== null && "message" in body
+          ? String((body as { message: unknown }).message)
+          : `http ${xhr.status}`;
       resolve({ ok, status: xhr.status, body, errorCode });
     };
 
-    xhr.onerror = () => reject(new Error('network error'));
-    xhr.onabort = () => reject(new Error('aborted'));
+    xhr.onerror = () => reject(new Error("network error"));
+    xhr.onabort = () => reject(new Error("aborted"));
 
     const fd = new FormData();
-    fd.append('file', file);
+    fd.append("file", file);
     xhr.send(fd);
   });
 }

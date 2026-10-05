@@ -1,5 +1,5 @@
-import { Resend } from 'resend';
-import { env } from '../env';
+import { Resend } from "resend";
+import { env } from "../env";
 
 let _client: Resend | null = null;
 
@@ -13,7 +13,7 @@ export async function sendMagicLink(to: string, link: string) {
   const result = await client().emails.send({
     from: env().EMAIL_FROM,
     to,
-    subject: 'your echo·link sign-in link',
+    subject: "your echo·link sign-in link",
     text: `click to sign in:\n\n${link}\n\nthis link expires in ${env().MAGIC_LINK_EXPIRATION_MINUTES} minutes.`,
     html: `
       <div style="font-family: ui-monospace, monospace; padding: 24px; background: #1e1e2e; color: #cdd6f4;">
@@ -23,7 +23,7 @@ export async function sendMagicLink(to: string, link: string) {
         </p>
         <p style="font-size: 12px; color: #6c7086;">expires in ${env().MAGIC_LINK_EXPIRATION_MINUTES} minutes. ignore this email if you didn't request it.</p>
       </div>
-    `
+    `,
   });
   if (result.error) throw new Error(`resend: ${result.error.message}`);
 }

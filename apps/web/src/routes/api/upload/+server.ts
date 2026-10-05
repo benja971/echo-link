@@ -1,38 +1,25 @@
-import type { RequestHandler } from './$types';
-import { json, error } from '@sveltejs/kit';
-import { processAndStoreUpload, UploadError } from '$server/uploads/service';
-import { clientIp } from '$server/uploads/anonymous';
-import { env } from '$server/env';
+import type { RequestHandler } from "./$types";
+import { json, error } from "@sveltejs/kit";
+import { uploadRequest } from "$server/uploads/service";
+import { UploadError } from "$server/uploads/errors";
+import { env } from "$server/env";
 
-export const POST: RequestHandler = async ({ request, locals }) => {
-  const formData = await request.formData();
-  const file = formData.get('file');
-  if (!(file instanceof File)) throw error(400, 'no file');
-
-  const buffer = Buffer.from(await file.arrayBuffer());
-
+export const POST: RequestHandler = async ({
+  request,
+  locals,
+  getClientAddress,
+}) => {
   try {
-    let result;
-    if (locals.session) {
-      result = await processAndStoreUpload({
-        kind: 'authenticated',
-        accountId: locals.session.accountId,
-        userId: locals.session.userId,
-        filename: file.name,
-        contentType: file.type,
-        buffer
-      });
-    } else {
-      const ip = clientIp(request, request.headers);
-      result = await processAndStoreUpload({
-        kind: 'anonymous',
-        ip,
-        filename: file.name,
-        contentType: file.type,
-        buffer
-      });
-    }
-
+    const result = await uploadRequest(
+      request,
+      locals.session
+        ? {
+            kind: "authenticated",
+            accountId: locals.session.accountId,
+            userId: locals.session.userId,
+          }
+        : { kind: "anonymous", ip: getClientAddress() },
+    );
     return json({
       id: result.id,
       shareUrl: `${env().PUBLIC_BASE_URL}/v/${result.slug ?? result.id}`,
@@ -40,7 +27,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       mimeType: result.mimeType,
       sizeBytes: result.sizeBytes,
       title: result.title,
-      expiresAt: result.expiresAt
+      expiresAt: result.expiresAt,
     });
   } catch (err) {
     if (err instanceof UploadError) throw error(err.status, err.code);

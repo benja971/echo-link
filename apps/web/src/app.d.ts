@@ -1,4 +1,4 @@
-import type { SessionPayload } from '$server/accounts/session';
+import type { SessionPayload } from "$server/accounts/session";
 
 declare global {
   namespace App {

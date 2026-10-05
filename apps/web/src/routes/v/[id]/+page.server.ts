@@ -1,8 +1,8 @@
-import { error } from '@sveltejs/kit';
-import type { PageServerLoad } from './$types';
-import { getFileById, getFileBySlug } from '$server/files/repository';
-import { isUuid, validateSlug } from '$server/files/slug';
-import { env } from '$server/env';
+import { error } from "@sveltejs/kit";
+import type { PageServerLoad } from "./$types";
+import { getFileById, getFileBySlug } from "$server/files/repository";
+import { isUuid, validateSlug } from "$server/files/slug";
+import { env } from "$server/env";
 
 export const load: PageServerLoad = async ({ params }) => {
   const id = params.id;
@@ -17,8 +17,9 @@ export const load: PageServerLoad = async ({ params }) => {
     file = await getFileBySlug(id);
   }
 
-  if (!file) throw error(404, 'not found');
-  if (file.expiresAt && file.expiresAt.getTime() < Date.now()) throw error(410, 'expired');
+  if (!file) throw error(404, "not found");
+  if (file.expiresAt && file.expiresAt.getTime() < Date.now())
+    throw error(410, "expired");
 
   const fileUrl = `${env().CDN_PUBLIC_BASE_URL}/files/${file.s3Key}`;
   const thumbUrl = file.thumbnailS3Key
