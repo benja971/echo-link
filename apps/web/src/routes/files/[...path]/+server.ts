@@ -28,6 +28,6 @@ export const GET: RequestHandler = async ({ params }) => {
     );
   }
 
-  const webStream = Readable.toWeb(stream) as ReadableStream;
+  const webStream = Readable.toWeb(stream) as unknown as ReadableStream<Uint8Array>;
   return new Response(webStream, { headers });
 };
