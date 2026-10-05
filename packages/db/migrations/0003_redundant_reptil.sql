@@ -1,0 +1,1 @@
+ALTER TABLE "upload_reservations" ADD COLUMN "object_keys" jsonb DEFAULT '[]'::jsonb NOT NULL;

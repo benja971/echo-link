@@ -15,6 +15,20 @@
       "when": 1777167554381,
       "tag": "0001_fluffy_gertrude_yorkes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791190293831,
+      "tag": "0002_tidy_karnak",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791190813170,
+      "tag": "0003_redundant_reptil",
+      "breakpoints": true
     }
   ]
 }
