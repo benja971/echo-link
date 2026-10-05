@@ -42,6 +42,9 @@ Thumbs.db
 # Testing
 coverage/
 
+# Local review captures; durable evidence is kept in docs/audits
+apps/web/.impeccable/review/
+
 # Temporary files
 tmp/
 temp/

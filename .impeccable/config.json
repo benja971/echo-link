@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "border-accent-on-rounded",
+        "value": "*",
+        "files": [
+          "apps/web/src/lib/components/FileRow.svelte"
+        ],
+        "createdAt": "2026-10-05T10:53:47.066Z",
+        "reason": "Agent review: line 123 is a desktop keyboard shortcut keycap span with neutral border-surface1 and 2px bottom edge, not an accent-bordered card; intentional keycap affordance."
+      }
+    ]
+  }
+}

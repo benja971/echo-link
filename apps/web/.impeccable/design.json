@@ -1,0 +1,709 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-05T10:54:27.873301+00:00",
+  "title": "Design System: Echo Link",
+  "extensions": {
+    "colorMeta": {
+      "base": {
+        "role": "neutral",
+        "displayName": "base",
+        "tonalRamp": [
+          "oklch(15.0% 0.00283 128.49)",
+          "oklch(26.4% 0.00283 128.49)",
+          "oklch(37.9% 0.00283 128.49)",
+          "oklch(49.3% 0.00283 128.49)",
+          "oklch(60.7% 0.00283 128.49)",
+          "oklch(72.1% 0.00283 128.49)",
+          "oklch(83.6% 0.00283 128.49)",
+          "oklch(95.0% 0.00283 128.49)"
+        ]
+      },
+      "mantle": {
+        "role": "neutral",
+        "displayName": "mantle",
+        "tonalRamp": [
+          "oklch(15.0% 0.00000 89.88)",
+          "oklch(26.4% 0.00000 89.88)",
+          "oklch(37.9% 0.00000 89.88)",
+          "oklch(49.3% 0.00000 89.88)",
+          "oklch(60.7% 0.00000 89.88)",
+          "oklch(72.1% 0.00000 89.88)",
+          "oklch(83.6% 0.00000 89.88)",
+          "oklch(95.0% 0.00000 89.88)"
+        ]
+      },
+      "crust": {
+        "role": "neutral",
+        "displayName": "crust",
+        "tonalRamp": [
+          "oklch(15.0% 0.00539 117.92)",
+          "oklch(26.4% 0.00539 117.92)",
+          "oklch(37.9% 0.00539 117.92)",
+          "oklch(49.3% 0.00539 117.92)",
+          "oklch(60.7% 0.00539 117.92)",
+          "oklch(72.1% 0.00539 117.92)",
+          "oklch(83.6% 0.00539 117.92)",
+          "oklch(95.0% 0.00539 117.92)"
+        ]
+      },
+      "surface0": {
+        "role": "neutral",
+        "displayName": "surface0",
+        "tonalRamp": [
+          "oklch(15.0% 0.00904 134.87)",
+          "oklch(26.4% 0.00904 134.87)",
+          "oklch(37.9% 0.00904 134.87)",
+          "oklch(49.3% 0.00904 134.87)",
+          "oklch(60.7% 0.00904 134.87)",
+          "oklch(72.1% 0.00904 134.87)",
+          "oklch(83.6% 0.00904 134.87)",
+          "oklch(95.0% 0.00904 134.87)"
+        ]
+      },
+      "surface1": {
+        "role": "neutral",
+        "displayName": "surface1",
+        "tonalRamp": [
+          "oklch(15.0% 0.01499 132.49)",
+          "oklch(26.4% 0.01499 132.49)",
+          "oklch(37.9% 0.01499 132.49)",
+          "oklch(49.3% 0.01499 132.49)",
+          "oklch(60.7% 0.01499 132.49)",
+          "oklch(72.1% 0.01499 132.49)",
+          "oklch(83.6% 0.01499 132.49)",
+          "oklch(95.0% 0.01499 132.49)"
+        ]
+      },
+      "surface2": {
+        "role": "neutral",
+        "displayName": "surface2",
+        "tonalRamp": [
+          "oklch(15.0% 0.02227 136.61)",
+          "oklch(26.4% 0.02227 136.61)",
+          "oklch(37.9% 0.02227 136.61)",
+          "oklch(49.3% 0.02227 136.61)",
+          "oklch(60.7% 0.02227 136.61)",
+          "oklch(72.1% 0.02227 136.61)",
+          "oklch(83.6% 0.02227 136.61)",
+          "oklch(95.0% 0.02227 136.61)"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "text",
+        "tonalRamp": [
+          "oklch(15.0% 0.02075 144.97)",
+          "oklch(26.4% 0.02075 144.97)",
+          "oklch(37.9% 0.02075 144.97)",
+          "oklch(49.3% 0.02075 144.97)",
+          "oklch(60.7% 0.02075 144.97)",
+          "oklch(72.1% 0.02075 144.97)",
+          "oklch(83.6% 0.02075 144.97)",
+          "oklch(95.0% 0.02075 144.97)"
+        ]
+      },
+      "subtext1": {
+        "role": "neutral",
+        "displayName": "subtext1",
+        "tonalRamp": [
+          "oklch(15.0% 0.02658 145.11)",
+          "oklch(26.4% 0.02658 145.11)",
+          "oklch(37.9% 0.02658 145.11)",
+          "oklch(49.3% 0.02658 145.11)",
+          "oklch(60.7% 0.02658 145.11)",
+          "oklch(72.1% 0.02658 145.11)",
+          "oklch(83.6% 0.02658 145.11)",
+          "oklch(95.0% 0.02658 145.11)"
+        ]
+      },
+      "blue": {
+        "role": "primary",
+        "displayName": "blue",
+        "tonalRamp": [
+          "oklch(15.0% 0.12064 257.32)",
+          "oklch(26.4% 0.12064 257.32)",
+          "oklch(37.9% 0.12064 257.32)",
+          "oklch(49.3% 0.12064 257.32)",
+          "oklch(60.7% 0.12064 257.32)",
+          "oklch(72.1% 0.12064 257.32)",
+          "oklch(83.6% 0.12064 257.32)",
+          "oklch(95.0% 0.12064 257.32)"
+        ]
+      },
+      "teal": {
+        "role": "secondary",
+        "displayName": "teal",
+        "tonalRamp": [
+          "oklch(15.0% 0.07098 178.93)",
+          "oklch(26.4% 0.07098 178.93)",
+          "oklch(37.9% 0.07098 178.93)",
+          "oklch(49.3% 0.07098 178.93)",
+          "oklch(60.7% 0.07098 178.93)",
+          "oklch(72.1% 0.07098 178.93)",
+          "oklch(83.6% 0.07098 178.93)",
+          "oklch(95.0% 0.07098 178.93)"
+        ]
+      },
+      "yellow": {
+        "role": "secondary",
+        "displayName": "yellow",
+        "tonalRamp": [
+          "oklch(15.0% 0.09139 74.99)",
+          "oklch(26.4% 0.09139 74.99)",
+          "oklch(37.9% 0.09139 74.99)",
+          "oklch(49.3% 0.09139 74.99)",
+          "oklch(60.7% 0.09139 74.99)",
+          "oklch(72.1% 0.09139 74.99)",
+          "oklch(83.6% 0.09139 74.99)",
+          "oklch(95.0% 0.09139 74.99)"
+        ]
+      },
+      "red": {
+        "role": "secondary",
+        "displayName": "red",
+        "tonalRamp": [
+          "oklch(15.0% 0.14262 18.21)",
+          "oklch(26.4% 0.14262 18.21)",
+          "oklch(37.9% 0.14262 18.21)",
+          "oklch(49.3% 0.14262 18.21)",
+          "oklch(60.7% 0.14262 18.21)",
+          "oklch(72.1% 0.14262 18.21)",
+          "oklch(83.6% 0.14262 18.21)",
+          "oklch(95.0% 0.14262 18.21)"
+        ]
+      },
+      "green": {
+        "role": "tertiary",
+        "displayName": "green",
+        "tonalRamp": [
+          "oklch(15.0% 0.10064 145.63)",
+          "oklch(26.4% 0.10064 145.63)",
+          "oklch(37.9% 0.10064 145.63)",
+          "oklch(49.3% 0.10064 145.63)",
+          "oklch(60.7% 0.10064 145.63)",
+          "oklch(72.1% 0.10064 145.63)",
+          "oklch(83.6% 0.10064 145.63)",
+          "oklch(95.0% 0.10064 145.63)"
+        ]
+      },
+      "peach": {
+        "role": "tertiary",
+        "displayName": "peach",
+        "tonalRamp": [
+          "oklch(15.0% 0.10907 47.76)",
+          "oklch(26.4% 0.10907 47.76)",
+          "oklch(37.9% 0.10907 47.76)",
+          "oklch(49.3% 0.10907 47.76)",
+          "oklch(60.7% 0.10907 47.76)",
+          "oklch(72.1% 0.10907 47.76)",
+          "oklch(83.6% 0.10907 47.76)",
+          "oklch(95.0% 0.10907 47.76)"
+        ]
+      },
+      "sky": {
+        "role": "tertiary",
+        "displayName": "sky",
+        "tonalRamp": [
+          "oklch(15.0% 0.07638 232.00)",
+          "oklch(26.4% 0.07638 232.00)",
+          "oklch(37.9% 0.07638 232.00)",
+          "oklch(49.3% 0.07638 232.00)",
+          "oklch(60.7% 0.07638 232.00)",
+          "oklch(72.1% 0.07638 232.00)",
+          "oklch(83.6% 0.07638 232.00)",
+          "oklch(95.0% 0.07638 232.00)"
+        ]
+      },
+      "lavender": {
+        "role": "tertiary",
+        "displayName": "lavender",
+        "tonalRamp": [
+          "oklch(15.0% 0.10725 297.88)",
+          "oklch(26.4% 0.10725 297.88)",
+          "oklch(37.9% 0.10725 297.88)",
+          "oklch(49.3% 0.10725 297.88)",
+          "oklch(60.7% 0.10725 297.88)",
+          "oklch(72.1% 0.10725 297.88)",
+          "oklch(83.6% 0.10725 297.88)",
+          "oklch(95.0% 0.10725 297.88)"
+        ]
+      },
+      "pink": {
+        "role": "tertiary",
+        "displayName": "pink",
+        "tonalRamp": [
+          "oklch(15.0% 0.12543 349.77)",
+          "oklch(26.4% 0.12543 349.77)",
+          "oklch(37.9% 0.12543 349.77)",
+          "oklch(49.3% 0.12543 349.77)",
+          "oklch(60.7% 0.12543 349.77)",
+          "oklch(72.1% 0.12543 349.77)",
+          "oklch(83.6% 0.12543 349.77)",
+          "oklch(95.0% 0.12543 349.77)"
+        ]
+      },
+      "on-accent": {
+        "role": "neutral",
+        "displayName": "on-accent",
+        "tonalRamp": [
+          "oklch(15.0% 0.00000 89.88)",
+          "oklch(26.4% 0.00000 89.88)",
+          "oklch(37.9% 0.00000 89.88)",
+          "oklch(49.3% 0.00000 89.88)",
+          "oklch(60.7% 0.00000 89.88)",
+          "oklch(72.1% 0.00000 89.88)",
+          "oklch(83.6% 0.00000 89.88)",
+          "oklch(95.0% 0.00000 89.88)"
+        ]
+      },
+      "dark-base": {
+        "role": "neutral",
+        "displayName": "dark-base",
+        "tonalRamp": [
+          "oklch(15.0% 0.00586 285.89)",
+          "oklch(26.4% 0.00586 285.89)",
+          "oklch(37.9% 0.00586 285.89)",
+          "oklch(49.3% 0.00586 285.89)",
+          "oklch(60.7% 0.00586 285.89)",
+          "oklch(72.1% 0.00586 285.89)",
+          "oklch(83.6% 0.00586 285.89)",
+          "oklch(95.0% 0.00586 285.89)"
+        ]
+      },
+      "dark-mantle": {
+        "role": "neutral",
+        "displayName": "dark-mantle",
+        "tonalRamp": [
+          "oklch(15.0% 0.00752 285.83)",
+          "oklch(26.4% 0.00752 285.83)",
+          "oklch(37.9% 0.00752 285.83)",
+          "oklch(49.3% 0.00752 285.83)",
+          "oklch(60.7% 0.00752 285.83)",
+          "oklch(72.1% 0.00752 285.83)",
+          "oklch(83.6% 0.00752 285.83)",
+          "oklch(95.0% 0.00752 285.83)"
+        ]
+      },
+      "dark-crust": {
+        "role": "neutral",
+        "displayName": "dark-crust",
+        "tonalRamp": [
+          "oklch(15.0% 0.00603 285.81)",
+          "oklch(26.4% 0.00603 285.81)",
+          "oklch(37.9% 0.00603 285.81)",
+          "oklch(49.3% 0.00603 285.81)",
+          "oklch(60.7% 0.00603 285.81)",
+          "oklch(72.1% 0.00603 285.81)",
+          "oklch(83.6% 0.00603 285.81)",
+          "oklch(95.0% 0.00603 285.81)"
+        ]
+      },
+      "dark-surface0": {
+        "role": "neutral",
+        "displayName": "dark-surface0",
+        "tonalRamp": [
+          "oklch(15.0% 0.00901 285.83)",
+          "oklch(26.4% 0.00901 285.83)",
+          "oklch(37.9% 0.00901 285.83)",
+          "oklch(49.3% 0.00901 285.83)",
+          "oklch(60.7% 0.00901 285.83)",
+          "oklch(72.1% 0.00901 285.83)",
+          "oklch(83.6% 0.00901 285.83)",
+          "oklch(95.0% 0.00901 285.83)"
+        ]
+      },
+      "dark-surface1": {
+        "role": "neutral",
+        "displayName": "dark-surface1",
+        "tonalRamp": [
+          "oklch(15.0% 0.01204 285.76)",
+          "oklch(26.4% 0.01204 285.76)",
+          "oklch(37.9% 0.01204 285.76)",
+          "oklch(49.3% 0.01204 285.76)",
+          "oklch(60.7% 0.01204 285.76)",
+          "oklch(72.1% 0.01204 285.76)",
+          "oklch(83.6% 0.01204 285.76)",
+          "oklch(95.0% 0.01204 285.76)"
+        ]
+      },
+      "dark-surface2": {
+        "role": "neutral",
+        "displayName": "dark-surface2",
+        "tonalRamp": [
+          "oklch(15.0% 0.01465 285.78)",
+          "oklch(26.4% 0.01465 285.78)",
+          "oklch(37.9% 0.01465 285.78)",
+          "oklch(49.3% 0.01465 285.78)",
+          "oklch(60.7% 0.01465 285.78)",
+          "oklch(72.1% 0.01465 285.78)",
+          "oklch(83.6% 0.01465 285.78)",
+          "oklch(95.0% 0.01465 285.78)"
+        ]
+      },
+      "dark-text": {
+        "role": "neutral",
+        "displayName": "dark-text",
+        "tonalRamp": [
+          "oklch(15.0% 0.00133 286.38)",
+          "oklch(26.4% 0.00133 286.38)",
+          "oklch(37.9% 0.00133 286.38)",
+          "oklch(49.3% 0.00133 286.38)",
+          "oklch(60.7% 0.00133 286.38)",
+          "oklch(72.1% 0.00133 286.38)",
+          "oklch(83.6% 0.00133 286.38)",
+          "oklch(95.0% 0.00133 286.38)"
+        ]
+      },
+      "dark-subtext1": {
+        "role": "neutral",
+        "displayName": "dark-subtext1",
+        "tonalRamp": [
+          "oklch(15.0% 0.00821 286.23)",
+          "oklch(26.4% 0.00821 286.23)",
+          "oklch(37.9% 0.00821 286.23)",
+          "oklch(49.3% 0.00821 286.23)",
+          "oklch(60.7% 0.00821 286.23)",
+          "oklch(72.1% 0.00821 286.23)",
+          "oklch(83.6% 0.00821 286.23)",
+          "oklch(95.0% 0.00821 286.23)"
+        ]
+      },
+      "dark-blue": {
+        "role": "primary",
+        "displayName": "dark-blue",
+        "tonalRamp": [
+          "oklch(15.0% 0.08641 259.89)",
+          "oklch(26.4% 0.08641 259.89)",
+          "oklch(37.9% 0.08641 259.89)",
+          "oklch(49.3% 0.08641 259.89)",
+          "oklch(60.7% 0.08641 259.89)",
+          "oklch(72.1% 0.08641 259.89)",
+          "oklch(83.6% 0.08641 259.89)",
+          "oklch(95.0% 0.08641 259.89)"
+        ]
+      },
+      "dark-teal": {
+        "role": "secondary",
+        "displayName": "dark-teal",
+        "tonalRamp": [
+          "oklch(15.0% 0.07702 177.98)",
+          "oklch(26.4% 0.07702 177.98)",
+          "oklch(37.9% 0.07702 177.98)",
+          "oklch(49.3% 0.07702 177.98)",
+          "oklch(60.7% 0.07702 177.98)",
+          "oklch(72.1% 0.07702 177.98)",
+          "oklch(83.6% 0.07702 177.98)",
+          "oklch(95.0% 0.07702 177.98)"
+        ]
+      },
+      "dark-yellow": {
+        "role": "secondary",
+        "displayName": "dark-yellow",
+        "tonalRamp": [
+          "oklch(15.0% 0.10449 86.63)",
+          "oklch(26.4% 0.10449 86.63)",
+          "oklch(37.9% 0.10449 86.63)",
+          "oklch(49.3% 0.10449 86.63)",
+          "oklch(60.7% 0.10449 86.63)",
+          "oklch(72.1% 0.10449 86.63)",
+          "oklch(83.6% 0.10449 86.63)",
+          "oklch(95.0% 0.10449 86.63)"
+        ]
+      },
+      "dark-red": {
+        "role": "secondary",
+        "displayName": "dark-red",
+        "tonalRamp": [
+          "oklch(15.0% 0.10561 14.53)",
+          "oklch(26.4% 0.10561 14.53)",
+          "oklch(37.9% 0.10561 14.53)",
+          "oklch(49.3% 0.10561 14.53)",
+          "oklch(60.7% 0.10561 14.53)",
+          "oklch(72.1% 0.10561 14.53)",
+          "oklch(83.6% 0.10561 14.53)",
+          "oklch(95.0% 0.10561 14.53)"
+        ]
+      },
+      "dark-green": {
+        "role": "tertiary",
+        "displayName": "dark-green",
+        "tonalRamp": [
+          "oklch(15.0% 0.08721 142.80)",
+          "oklch(26.4% 0.08721 142.80)",
+          "oklch(37.9% 0.08721 142.80)",
+          "oklch(49.3% 0.08721 142.80)",
+          "oklch(60.7% 0.08721 142.80)",
+          "oklch(72.1% 0.08721 142.80)",
+          "oklch(83.6% 0.08721 142.80)",
+          "oklch(95.0% 0.08721 142.80)"
+        ]
+      },
+      "dark-peach": {
+        "role": "tertiary",
+        "displayName": "dark-peach",
+        "tonalRamp": [
+          "oklch(15.0% 0.08203 56.67)",
+          "oklch(26.4% 0.08203 56.67)",
+          "oklch(37.9% 0.08203 56.67)",
+          "oklch(49.3% 0.08203 56.67)",
+          "oklch(60.7% 0.08203 56.67)",
+          "oklch(72.1% 0.08203 56.67)",
+          "oklch(83.6% 0.08203 56.67)",
+          "oklch(95.0% 0.08203 56.67)"
+        ]
+      },
+      "dark-sky": {
+        "role": "tertiary",
+        "displayName": "dark-sky",
+        "tonalRamp": [
+          "oklch(15.0% 0.06109 227.90)",
+          "oklch(26.4% 0.06109 227.90)",
+          "oklch(37.9% 0.06109 227.90)",
+          "oklch(49.3% 0.06109 227.90)",
+          "oklch(60.7% 0.06109 227.90)",
+          "oklch(72.1% 0.06109 227.90)",
+          "oklch(83.6% 0.06109 227.90)",
+          "oklch(95.0% 0.06109 227.90)"
+        ]
+      },
+      "dark-lavender": {
+        "role": "tertiary",
+        "displayName": "dark-lavender",
+        "tonalRamp": [
+          "oklch(15.0% 0.07833 298.81)",
+          "oklch(26.4% 0.07833 298.81)",
+          "oklch(37.9% 0.07833 298.81)",
+          "oklch(49.3% 0.07833 298.81)",
+          "oklch(60.7% 0.07833 298.81)",
+          "oklch(72.1% 0.07833 298.81)",
+          "oklch(83.6% 0.07833 298.81)",
+          "oklch(95.0% 0.07833 298.81)"
+        ]
+      },
+      "dark-pink": {
+        "role": "tertiary",
+        "displayName": "dark-pink",
+        "tonalRamp": [
+          "oklch(15.0% 0.07990 348.89)",
+          "oklch(26.4% 0.07990 348.89)",
+          "oklch(37.9% 0.07990 348.89)",
+          "oklch(49.3% 0.07990 348.89)",
+          "oklch(60.7% 0.07990 348.89)",
+          "oklch(72.1% 0.07990 348.89)",
+          "oklch(83.6% 0.07990 348.89)",
+          "oklch(95.0% 0.07990 348.89)"
+        ]
+      },
+      "dark-on-accent": {
+        "role": "neutral",
+        "displayName": "dark-on-accent",
+        "tonalRamp": [
+          "oklch(15.0% 0.00603 285.81)",
+          "oklch(26.4% 0.00603 285.81)",
+          "oklch(37.9% 0.00603 285.81)",
+          "oklch(49.3% 0.00603 285.81)",
+          "oklch(60.7% 0.00603 285.81)",
+          "oklch(72.1% 0.00603 285.81)",
+          "oklch(83.6% 0.00603 285.81)",
+          "oklch(95.0% 0.00603 285.81)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "display",
+        "purpose": "Titre d’accueil."
+      },
+      "title": {
+        "displayName": "title",
+        "purpose": "Titres de fichier et workspace."
+      },
+      "body": {
+        "displayName": "body",
+        "purpose": "Texte et champs."
+      },
+      "label": {
+        "displayName": "label",
+        "purpose": "Commandes et libellés."
+      },
+      "metadata": {
+        "displayName": "metadata",
+        "purpose": "Attributs et notation clavier."
+      },
+      "url": {
+        "displayName": "url",
+        "purpose": "Lien sélectionnable."
+      },
+      "display-mobile": {
+        "displayName": "display-mobile",
+        "purpose": "Titre d’accueil mobile, une phrase introductive."
+      },
+      "share-title-mobile": {
+        "displayName": "share-title-mobile",
+        "purpose": "Titre lisible de consultation et aperçu mobile."
+      },
+      "share-metadata-mobile": {
+        "displayName": "share-metadata-mobile",
+        "purpose": "Métadonnées mobiles en Geist, sans monospace."
+      }
+    },
+    "shadows": [
+      {
+        "name": "file-selection",
+        "value": "0 0 0 2px var(--color-accent)",
+        "purpose": "Focus et sélection de fichier."
+      },
+      {
+        "name": "toast",
+        "value": "0 25px 50px -12px rgb(0 0 0 / 0.25)",
+        "purpose": "Notification flottante."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Transitions lignes et grille."
+      },
+      {
+        "name": "file-row-arrival",
+        "value": "500ms; translateY(6px) to translateY(0)",
+        "purpose": "Supprimée en mouvement réduit."
+      },
+      {
+        "name": "toast",
+        "value": "150ms; translateY(12px) to translateY(0)",
+        "purpose": "Déplacement supprimé en mouvement réduit."
+      },
+      {
+        "name": "color-feedback",
+        "value": "150ms",
+        "purpose": "Retour couleur discret."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Copie explicite.",
+      "html": "<button class=\"ds-primary\">Copy link</button>",
+      "css": ".ds-primary{font-family:var(--font-sans,\"Geist Variable\", ui-sans-serif, system-ui, sans-serif);font-size:14px;line-height:20px;min-height:44px;padding:8px 16px;font-weight:500;border:0;border-radius:6px;background:var(--color-accent,#1f4f91);color:var(--color-on-accent, #ffffff)}.ds-primary:focus-visible{outline:2px solid var(--color-accent,#1f4f91);outline-offset:3px}.ds-primary{transition:background-color 150ms,border-color 150ms,color 150ms}@media(hover:hover){.ds-primary:not(:disabled):hover{background:var(--color-accent-hover, color-mix(in srgb, var(--color-accent, #1f4f91) 76%, #000000));color:var(--color-on-accent, #ffffff)}}.ds-primary:not(:disabled):active{background:var(--color-accent-active, color-mix(in srgb, var(--color-accent, #1f4f91) 64%, #000000));color:var(--color-on-accent, #ffffff)}"
+    },
+    {
+      "name": "Secondary button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Action neutre.",
+      "html": "<button class=\"ds-secondary\">Download</button>",
+      "css": ".ds-secondary{font-family:var(--font-sans,\"Geist Variable\", ui-sans-serif, system-ui, sans-serif);font-size:14px;line-height:20px;min-height:44px;padding:8px 16px;border:1px solid var(--color-surface1, #d3d9cf);border-radius:6px;background:var(--color-surface0, #e9ede7);color:var(--color-subtext1, #4a574a);transition:color 150ms,background-color 150ms}.ds-secondary:focus-visible{outline:2px solid var(--color-accent,#1f4f91);outline-offset:3px}.ds-secondary{transition:background-color 150ms,border-color 150ms,color 150ms}@media(hover:hover){.ds-secondary:not(:disabled):hover{background:var(--color-surface1, #d3d9cf);border-color:var(--color-overlay1, #4a574a);color:var(--color-text, #202920)}}.ds-secondary:not(:disabled):active{background:var(--color-surface2, #b8c2b4);border-color:var(--color-overlay1, #4a574a);color:var(--color-text, #202920)}"
+    },
+    {
+      "name": "Share URL",
+      "kind": "input",
+      "refersTo": "input-link",
+      "description": "URL sélectionnable.",
+      "html": "<input class=\"ds-url\" aria-label=\"Share link\" readonly value=\"https://echo.example/v/sample\">",
+      "css": ".ds-url{font-family:var(--font-mono,\"JetBrains Mono\", ui-monospace, \"SF Mono\", monospace);font-size:16px;line-height:24px;min-height:44px;max-width:100%;padding:8px 12px;border:1px solid var(--color-subtext1, #4a574a);border-radius:6px;background:var(--color-mantle, #ffffff);color:var(--color-text, #202920)}.ds-url:focus-visible{outline:2px solid var(--color-accent,#1f4f91);outline-offset:1px}"
+    },
+    {
+      "name": "Selected format",
+      "kind": "chip",
+      "refersTo": "format-chip-selected",
+      "description": "Choix de format explicite.",
+      "html": "<button class=\"ds-chip\" aria-pressed=\"true\">Markdown</button>",
+      "css": ".ds-chip{font-family:var(--font-sans,\"Geist Variable\", ui-sans-serif, system-ui, sans-serif);font-size:14px;line-height:20px;min-height:44px;padding:0 12px;border:1px solid var(--color-accent,#1f4f91);border-radius:6px;background:var(--color-surface0, #e9ede7);color:var(--color-accent,#1f4f91)}.ds-chip:focus-visible{outline:2px solid var(--color-accent,#1f4f91);outline-offset:3px}.ds-chip{transition:background-color 150ms,border-color 150ms,color 150ms}@media(hover:hover){.ds-chip:not(:disabled):hover{background:var(--color-surface1, #d3d9cf);border-color:var(--color-overlay1, #4a574a);color:var(--color-text, #202920)}}.ds-chip:not(:disabled):active{background:var(--color-surface2, #b8c2b4);border-color:var(--color-overlay1, #4a574a);color:var(--color-text, #202920)}@media(hover:hover){.ds-chip[aria-pressed=\"true\"]:hover{border-color:var(--color-accent, #1f4f91);color:var(--color-accent, #1f4f91)}}"
+    },
+    {
+      "name": "Navigation action",
+      "kind": "nav",
+      "refersTo": "navigation-action",
+      "description": "Accès au compte.",
+      "html": "<nav aria-label=\"Main navigation\"><a class=\"ds-nav\" href=\"#\">Sign in <span aria-hidden=\"true\">↗</span></a></nav>",
+      "css": ".ds-nav{font-family:var(--font-sans,\"Geist Variable\", ui-sans-serif, system-ui, sans-serif);font-size:14px;line-height:20px;display:inline-flex;align-items:center;gap:12px;min-height:44px;padding:0 16px;font-weight:500;text-decoration:none;border:1px solid var(--color-surface1, #d3d9cf);border-radius:6px;background:var(--color-mantle, #ffffff);color:var(--color-text, #202920)}.ds-nav:focus-visible{outline:2px solid var(--color-accent,#1f4f91);outline-offset:3px}.ds-nav{transition:background-color 150ms,border-color 150ms,color 150ms}@media(hover:hover){.ds-nav:not(:disabled):hover{background:var(--color-surface1, #d3d9cf);border-color:var(--color-overlay1, #4a574a);color:var(--color-text, #202920)}}.ds-nav:not(:disabled):active{background:var(--color-surface2, #b8c2b4);border-color:var(--color-overlay1, #4a574a);color:var(--color-text, #202920)}"
+    },
+    {
+      "name": "Upload result",
+      "kind": "card",
+      "refersTo": "card-result",
+      "description": "Résultat sans ombre.",
+      "html": "<div class=\"ds-card\"><p>photo.jpg</p><span>1 file ready to share</span></div>",
+      "css": ".ds-card{font-family:var(--font-sans,\"Geist Variable\", ui-sans-serif, system-ui, sans-serif);font-size:14px;line-height:20px;padding:16px;border:1px solid var(--color-surface1, #d3d9cf);border-radius:6px;background:var(--color-mantle, #ffffff);color:var(--color-text, #202920)}.ds-card p{margin:0 0 12px;font-weight:500;overflow-wrap:anywhere}.ds-card span{color:var(--color-subtext1, #4a574a)}"
+    },
+    {
+      "name": "File selection",
+      "kind": "custom",
+      "refersTo": "dropzone",
+      "description": "Accueil mobile compact, dépôt plus ample sur desktop.",
+      "html": "<button class=\"ds-drop\"><svg width=\"32\" height=\"40\" viewBox=\"0 0 32 40\" fill=\"none\" aria-hidden=\"true\"><path d=\"M6 1h13l12 12v25H1V1h5Zm13 0v12h12M16 31V19m-5 5 5-5 5 5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg><span class=\"ds-drop-action\">Choose files</span><span>Tap to select files</span></button>",
+      "css": ".ds-drop{font-family:var(--font-sans,\"Geist Variable\", ui-sans-serif, system-ui, sans-serif);font-size:14px;line-height:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;min-height:160px;width:100%;padding:20px;border:1px dashed var(--color-subtext1, #4a574a);border-radius:8px;background:var(--color-mantle, #ffffff);color:var(--color-subtext1, #4a574a);transition:border-color 150ms}.ds-drop:focus-visible{outline:2px solid var(--color-accent,#1f4f91);outline-offset:3px}.ds-drop-action{display:inline-flex;align-items:center;min-height:44px;padding:0 24px;font-size:16px;font-weight:500;border-radius:6px;background:var(--color-accent,#1f4f91);color:var(--color-on-accent, #ffffff)}@media(min-width:640px){.ds-drop{min-height:288px;padding-inline:32px}}@media(hover:hover){.ds-drop:not(:disabled):hover{background:var(--color-surface0, #e9ede7);border-color:var(--color-accent, #1f4f91)}.ds-drop:not(:disabled):hover .ds-drop-action{background:var(--color-accent-hover, color-mix(in srgb, var(--color-accent, #1f4f91) 76%, #000000));color:var(--color-on-accent, #ffffff)}}.ds-drop:not(:disabled):active .ds-drop-action{background:var(--color-accent-active, color-mix(in srgb, var(--color-accent, #1f4f91) 64%, #000000));color:var(--color-on-accent, #ffffff)}.ds-drop-action{transition:background-color 150ms}.ds-drop>svg{height:32px;width:24px;margin-bottom:12px}.ds-drop>span:last-child{margin-top:12px}@media(min-width:640px){.ds-drop{padding:32px}.ds-drop>svg{height:40px;width:32px;margin-bottom:20px}.ds-drop>span:last-child{margin-top:16px}}"
+    },
+    {
+      "name": "Danger action",
+      "kind": "button",
+      "refersTo": "button-danger-hover",
+      "description": "Action destructive, libellé explicite et survol rose.",
+      "html": "<button class=\"ds-danger\">Delete file</button>",
+      "css": ".ds-danger{font-family:var(--font-sans,\"Geist Variable\",sans-serif);font-size:14px;line-height:20px;min-height:44px;padding:8px 12px;border-radius:6px;border:1px solid var(--color-red,#9c303c);background:var(--color-surface0,#e9ede7);color:var(--color-red,#9c303c);transition:background-color 150ms,border-color 150ms,color 150ms}.ds-danger:focus-visible{outline:2px solid var(--color-accent,#1f4f91);outline-offset:3px}@media(hover:hover){.ds-danger:not(:disabled):hover{background:color-mix(in srgb,var(--color-red,#9c303c) 18%,var(--color-mantle,#ffffff));border-color:var(--color-red,#9c303c);color:var(--color-red,#9c303c)}}.ds-danger:not(:disabled):active{background:var(--color-surface2,#b8c2b4);border-color:var(--color-overlay1,#4a574a);color:var(--color-text,#202920)}"
+    },
+    {
+      "name": "Mobile file row",
+      "kind": "custom",
+      "refersTo": "mobile-file-row",
+      "description": "Une seule collection mobile avec sélection, titre lisible et actions directes.",
+      "html": "<div class=\"ds-mobile-file\"><label class=\"ds-mobile-check\"><input type=\"checkbox\" aria-label=\"Select photo.jpg\"></label><div><p class=\"ds-mobile-title\">photo.jpg</p><p class=\"ds-mobile-meta\">1.2 MB · expires in 2 days</p></div><div class=\"ds-mobile-actions\"><button>View file</button><button>Copy link</button></div></div>",
+      "css": ".ds-mobile-file{display:grid;grid-template-columns:44px minmax(0,1fr);column-gap:8px;row-gap:12px;padding:16px 4px;border-bottom:1px solid var(--color-surface1,#d3d9cf);font-family:var(--font-sans,\"Geist Variable\",sans-serif);background:var(--color-mantle,#ffffff);color:var(--color-text,#202920)}.ds-mobile-check{display:grid;place-items:center;width:44px;height:44px;cursor:pointer}.ds-mobile-check input{width:20px;height:20px;accent-color:var(--color-accent,#1f4f91)}.ds-mobile-title{margin:4px 0 0;font-size:16px;font-weight:500;line-height:24px;overflow-wrap:anywhere}.ds-mobile-meta{margin:4px 0 0;font-size:14px;line-height:20px;color:var(--color-subtext1,#4a574a)}.ds-mobile-actions{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.ds-mobile-actions button{min-height:44px;padding:0 12px;font:500 14px var(--font-sans,\"Geist Variable\",sans-serif);border:1px solid var(--color-surface1,#d3d9cf);border-radius:6px;background:var(--color-base,#fafbf9);color:var(--color-text,#202920);transition:background-color 150ms,border-color 150ms,color 150ms}.ds-mobile-actions button:last-child{border-color:color-mix(in srgb,var(--color-accent,#1f4f91) 40%,transparent);background:transparent;color:var(--color-accent,#1f4f91)}.ds-mobile-file :focus-visible{outline:2px solid var(--color-accent,#1f4f91);outline-offset:3px}@media(hover:hover){.ds-mobile-actions button:hover{background:var(--color-surface1,#d3d9cf);border-color:var(--color-overlay1,#4a574a);color:var(--color-text,#202920)}}.ds-mobile-actions button:active{background:var(--color-surface2,#b8c2b4);color:var(--color-text,#202920)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Le comptoir de transmission",
+    "overview": "Le comptoir de transmission privilégie une remise claire : un fichier entre, un lien lisible en sort. Echo Link reste un outil sobre, aux surfaces claires légèrement verdâtres et aux surfaces sombres gris anthracite et aux accents réservés aux actions et aux états. Catppuccin, les halos colorés et le fond à points ont été remplacés.\n\nLa densité reste pratique : texte sans empattement, contours discrets, commandes explicites et métadonnées séparées. Les thèmes clair et sombre partagent la même hiérarchie. Le nom Echo Link et la langue anglaise de l’interface restent conservés.",
+    "keyCharacteristics": [
+      "Surfaces séparées par le ton et le contour.",
+      "Action principale identifiable, sans décoration concurrente.",
+      "Liens sélectionnables et feedback correspondant au résultat réel.",
+      "Commandes présentes au clavier et au tactile."
+    ],
+    "rules": [
+      {
+        "name": "The Action Accent Rule",
+        "body": "L’accent choisi souligne actions, focus et sélection ; les couleurs de succès et d’erreur gardent leur sens propre.",
+        "section": "colors"
+      },
+      {
+        "name": "The Flat Surface Rule",
+        "body": "Les surfaces ordinaires restent plates. Réserver ombres et anneaux aux sélections et notifications flottantes.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do rendre les liens textuels visibles au repos et les états hover/active perceptibles.",
+      "Do conserver l’anglais des libellés et le nom Echo Link.",
+      "Do donner aux contrôles tactiles principaux une cible de 44px.",
+      "Do conserver un lien sélectionnable lorsque la copie échoue.",
+      "Do vérifier titres longs, thèmes et états de chargement, échec et sélection.",
+      "Do respecter le mouvement réduit et laisser les conseils avancer sur action explicite."
+    ],
+    "donts": [
+      "Don't réintroduire Catppuccin, halos décoratifs, fond à points ou logo géant.",
+      "Don't cacher une fonction principale derrière le survol ou un raccourci clavier.",
+      "Don't confondre upload réussi et copie réussie.",
+      "Don't revendiquer une certification AA, lecteur d’écran, téléphone physique ou zoom 200% sans vérification dédiée."
+    ]
+  }
+}
