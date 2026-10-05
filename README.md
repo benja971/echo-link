@@ -1,292 +1,103 @@
-# echo-link
+# Echo-Link
 
-Service auto-hébergé pour partager des fichiers volumineux via Discord avec stockage MinIO/S3.
+Partage de fichiers auto-hébergé : interface SvelteKit, bot Discord, PostgreSQL et MinIO/S3. Monolithe modulaire côté web, avec un bot séparé. Bun gère les workspaces et le serveur de production utilise `adapter-node` exécuté par Bun.
 
-## 🎯 Fonctionnalités
+## Développer
 
-- Upload de fichiers volumineux vers un stockage objet MinIO (compatible S3)
-- Génération d'URLs de partage avec preview Discord (Open Graph)
-- Support de la lecture vidéo intégrée dans Discord (MP4/H.264)
-- Authentification par token Bearer pour les uploads
-- Base de données PostgreSQL pour le tracking des fichiers
-- Architecture modulaire et typée en TypeScript
-
-## 🚀 Installation
-
-### Prérequis
-
-- Node.js >= 20.0.0
-- PostgreSQL
-- MinIO ou service S3-compatible
-- Docker et Docker Compose (optionnel)
-
-### Installation locale
-
-1. **Cloner le dépôt**
+Prérequis : Bun 1.3+, Node.js 20+ pour les clients des tests d’intégration, Docker et Docker Compose. `ffmpeg` sert aux miniatures vidéo; il est inclus dans l'image de production.
 
 ```bash
-git clone <repository-url>
-cd echo-link
-```
-
-2. **Installer les dépendances**
-
-```bash
-npm install
-```
-
-3. **Configurer les variables d'environnement**
-
-Copier le fichier `.env.example` vers `.env` et ajuster les valeurs :
-
-```bash
+bun install --frozen-lockfile
 cp .env.example .env
+# Compléter les secrets, RESEND_API_KEY et EMAIL_FROM dans .env.
+docker compose up -d postgres minio minio-init
+bun run db:migrate
+bun run dev
 ```
 
-Variables requises :
-
-```env
-# Server
-PORT=3000
-
-# Database
-DATABASE_HOST=localhost
-DATABASE_PORT=5432
-DATABASE_USERNAME=postgres
-DATABASE_PASSWORD=postgres
-DATABASE_NAME=echo-link
-DATABASE_SSL=0
-DATABASE_LOGGING=0
-
-# S3/MinIO Configuration
-S3_ENDPOINT=localhost
-S3_PORT=9000
-S3_USE_SSL=false
-S3_REGION=us-east-1
-S3_BUCKET_NAME=echo-link
-S3_FORCE_PATH_STYLE=true
-S3_ACCESS_KEY=minioadmin
-S3_SECRET_KEY=minioadmin
-
-# Public URLs
-PUBLIC_BASE_URL=https://echo-link.mondomaine.fr
-CDN_PUBLIC_BASE_URL=https://files.mondomaine.fr
-
-# Security
-UPLOAD_TOKEN=your-secret-token-here
-```
-
-4. **Initialiser la base de données**
-
-Exécuter la migration SQL :
+L'interface est sur http://localhost:5173. MinIO est privé : les téléchargements passent par `/files/*`. Resend fournit les liens de connexion; les identifiants SMTP de l'ancienne application ne sont plus utilisés.
 
 ```bash
-psql -h localhost -U postgres -d echolink -f src/db/migrations/001_init_files.sql
+bun run dev:bot           # bot Discord, avec ses identifiants configurés
+bun run lint              # Svelte + TypeScript web, DB et bot
+bun run test              # réception, limites, HTTP et stockage
+bun run build             # web et bot
+bun run check             # lint + tests + build
+bun run test:integration  # serveur construit + PostgreSQL/MinIO isolés via Docker
 ```
 
-5. **Lancer en développement**
+La CI exécute les mêmes contrôles et les tests d’intégration à chaque push et pull request.
+
+Les tests d'intégration créent leurs propres conteneurs et secrets éphémères, sans lire `.env.production`. Construire le projet avant de les lancer. Les tests stockage utilisent un serveur S3 simulé; les tests HTTP utilisent un vrai MinIO.
+
+Sur NixOS, Sharp peut nécessiter `libstdc++.so.6` dans `LD_LIBRARY_PATH`. Utiliser l'environnement de développement Nix de la machine; ce problème ne concerne pas l'image Alpine ou le runner Ubuntu.
+
+## Organisation
+
+```text
+apps/web/src/lib/server/
+  accounts/      sessions, identités, tiers et réservations atomiques
+  uploads/       réception multipart, validation, capacité et orchestration
+  storage/       objets S3 et miniatures depuis le disque
+  files/         métadonnées PostgreSQL et URLs lisibles
+  integrations/  Resend et Discord
+  lifecycle/     suppression et reprise du nettoyage
+  http/          limitation des petits corps de requête
+  env.ts         configuration validée
+apps/web/src/routes/   adaptations HTTP et pages SvelteKit
+apps/web/tests/        tests des modules backend
+apps/bot/              commandes Discord
+packages/db/           schéma et migrations Drizzle
+scripts/               opérations contrôlées sur les comptes
+```
+
+Une route traduit HTTP vers un module métier. Le parcours partagé `uploads/service.ts` possède l'upload de bout en bout, y compris réservation, temporaires, validation, stockage et compensation. Les règles de quotas vivent dans `accounts/`, pas dans les routes ou le navigateur. Voir [l'architecture](docs/architecture.md) pour les invariants et le parcours d'un fichier.
+
+`apps/api-legacy/` et `public/app/` conservent l'ancienne implémentation. Ils ne font pas partie des workspaces actifs, du build ou du routage de production. Les anciens documents sous `docs/superpowers/` décrivent la migration v2; ce README et `docs/architecture.md` décrivent le code courant.
+
+## Quotas et tiers
+
+| Profil     | Fichiers conservés           | Stockage cumulé               | Taille d'un transfert                             |
+| ---------- | ---------------------------- | ----------------------------- | ------------------------------------------------- |
+| Anonyme    | 3 uploads/IP/fenêtre de 24 h | Borné par taille et fréquence | 50 Mio                                            |
+| `standard` | 25                           | 500 Mio                       | Au plus le quota disponible et la borne technique |
+| `trusted`  | Illimité                     | Illimité                      | Borne technique configurable                      |
+
+Valeurs par défaut. Tous les comptes commencent en `standard`. Le tier est lu en base à chaque upload et ne donne aucun droit d'administration.
 
 ```bash
-npm run dev
+bun run set-upload-tier -- utilisateur@example.com trusted
+bun run set-upload-tier -- utilisateur@example.com standard
+# Un UUID de compte peut remplacer l'email.
 ```
 
-6. **Build pour production**
+En production, depuis le checkout du serveur :
 
 ```bash
-npm run build
-npm start
+docker compose -f docker-compose.prod.yml exec web bun scripts/set-upload-tier.ts utilisateur@example.com trusted
 ```
 
-## 🐳 Déploiement
+Le script refuse un email ambigu. Il change uniquement le tier; il ne crée pas de compte. La rétention reste de 10 jours par défaut, y compris pour `trusted`.
 
-### Développement local
+## Gros fichiers
 
-Le projet inclut un `docker-compose.yml` pour le développement :
+La requête multipart est lue en flux vers un temporaire privé, puis vérifiée par ses magic bytes et transférée en multipart S3. Les originaux ne sont jamais chargés en entier dans un Buffer. Les miniatures sont facultatives, bornées et synchrones avant suppression du temporaire.
 
-```bash
-# Lancer tous les services
-docker-compose up -d
+Les limites techniques sont dans `.env.example` et `.env.production.example` :
 
-# Vérifier les logs
-docker-compose logs -f echo-link
+- `UPLOAD_MAX_SIZE_MB=1024` : 1 Gio par fichier, configurable jusqu'à 64 Gio.
+- `UPLOAD_MAX_CONCURRENT=2` : uploads actifs par processus.
+- `UPLOAD_TIMEOUT_SECONDS=1800` : budget de 30 minutes pour le parcours principal.
+- `UPLOAD_MIN_FREE_SPACE_MB=512` : espace libre minimum sur le volume temporaire.
+- `UPLOAD_TEMP_DIR=/tmp/echo-link-uploads` : répertoire des temporaires.
+- `BODY_SIZE_LIMIT=Infinity` : l'application contrôle les octets réels; les autres corps de requête sont limités à 64 Kio.
 
-# Arrêter les services
-docker-compose down
-```
+`X-Upload-Size` indique la taille exacte du fichier, indépendamment de l'enveloppe multipart; le client web l'envoie. Les clients sans ce header réservent le budget disponible avant la lecture, ce qui peut réduire les uploads simultanés d'un même compte. Un header mensonger ne permet pas de dépasser le budget. Une requête contient un seul fichier et au plus quatre petits champs.
 
-Services exposés :
-- **echo-link** : http://localhost:3000
-- **MinIO Console** : http://localhost:9001 (admin: minioadmin/minioadmin)
-- **MinIO API** : http://localhost:9000
-- **PostgreSQL** : localhost:5432
+## Déployer
 
-### Production
+Les migrations sont additives. Le script existant `deploy.sh` applique les migrations avant le redémarrage du web et du bot. Compléter `.env.production` depuis l'exemple, puis utiliser la procédure de déploiement habituelle. `MAX_SIZE_MB` de l'ancienne implémentation est remplacé par `UPLOAD_MAX_SIZE_MB`.
 
-Pour un déploiement en production avec domaine public :
+Le reverse proxy peut imposer sa propre limite ou son propre timeout : les adapter au plafond choisi. Pour les quotas anonymes par IP derrière un proxy de confiance, configurer `ADDRESS_HEADER=x-forwarded-for` et `XFF_DEPTH` pour le nombre réel de proxies. Le web doit rester accessible uniquement par ce proxy, comme dans `docker-compose.prod.yml` (port publié sur `127.0.0.1`). Ne pas faire confiance aux headers IP d'un client qui pourrait joindre directement le web.
 
-```bash
-# 1. Copier et configurer .env.production
-cp .env.production.example .env.production
-nano .env.production
-
-# 2. Configurer tes domaines DNS
-# echo-link.ton-domaine.fr → IP serveur
-# cdn.ton-domaine.fr → IP serveur
-
-# 3. Build et lancer
-docker-compose -f docker-compose.prod.yml up -d --build
-
-# 4. Vérifier
-curl https://echo-link.ton-domaine.fr/health
-```
-
-**📖 Guide complet** : Voir [DEPLOYMENT.md](DEPLOYMENT.md) pour les instructions détaillées
-
-## 📡 Utilisation
-
-### Interface Web
-
-L'interface web minimale est accessible à l'adresse racine du serveur :
-
-```
-http://localhost:3000/
-```
-
-Fonctionnalités :
-- Champ pour saisir le token d'upload (UPLOAD_TOKEN)
-- Sélection de fichier
-- Upload et génération automatique du lien de partage
-
-### Upload via API (curl)
-
-```bash
-curl -X POST http://localhost:3000/upload \
-  -H "Authorization: Bearer your-secret-token-here" \
-  -F "file=@/path/to/video.mp4"
-```
-
-Réponse :
-
-```json
-{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "shareUrl": "https://echo-link.mondomaine.fr/v/550e8400-e29b-41d4-a716-446655440000",
-  "directUrl": "https://files.mondomaine.fr/videos/550e8400-e29b-41d4-a716-446655440000.mp4"
-}
-```
-
-### Partage dans Discord
-
-1. Copier la `shareUrl` retournée
-2. La coller dans Discord
-3. Discord affichera automatiquement un embed avec :
-   - Titre et description
-   - Thumbnail (si configuré)
-   - Lecteur vidéo intégré (pour les vidéos MP4/H.264)
-
-### Health check
-
-```bash
-curl http://localhost:3000/health
-```
-
-Réponse :
-
-```json
-{
-  "status": "ok"
-}
-```
-
-## 🏗️ Architecture
-
-```
-src/
-├── server.ts              # Point d'entrée Express
-├── config.ts              # Configuration et validation des variables d'environnement
-├── routes/
-│   ├── upload.ts          # POST /upload - Upload de fichiers
-│   ├── public.ts          # GET /v/:id - Page publique avec Open Graph
-│   └── health.ts          # GET /health - Health check
-├── services/
-│   ├── s3Service.ts       # Intégration MinIO/S3
-│   └── fileService.ts     # Logique métier fichiers
-└── db/
-    ├── pool.ts            # Pool de connexions PostgreSQL
-    └── migrations/
-        └── 001_init_files.sql
-```
-
-## 🔐 Sécurité
-
-- **Authentification** : Upload protégé par token Bearer
-- **IDs non-devinables** : UUIDs v4 pour tous les fichiers
-- **Validation** : Vérification stricte des variables d'environnement au démarrage
-- **Expiration** : Support de TTL via `expires_at` (à implémenter via tâche cron)
-
-## 🔧 Configuration reverse proxy
-
-### Caddy
-
-```caddy
-echo-link.mondomaine.fr {
-    reverse_proxy echo-link:3000
-}
-
-files.mondomaine.fr {
-    reverse_proxy minio:9000
-}
-```
-
-### Nginx
-
-```nginx
-server {
-    listen 443 ssl http2;
-    server_name echo-link.mondomaine.fr;
-
-    location / {
-        proxy_pass http://echo-link:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-
-server {
-    listen 443 ssl http2;
-    server_name files.mondomaine.fr;
-
-    client_max_body_size 1G;
-
-    location / {
-        proxy_pass http://minio:9000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-## 📝 Configuration MinIO
-
-Pour permettre l'accès public aux fichiers, configurer une policy sur le bucket :
-
-```bash
-mc alias set myminio http://localhost:9000 minioadmin minioadmin
-mc mb myminio/echo-link
-mc anonymous set download myminio/echo-link
-```
-
-## 🚧 Extensions futures
-
-- [ ] Génération automatique de thumbnails pour vidéos
-- [ ] Tâche cron de purge des fichiers expirés
-- [ ] Filtrage MIME types
-- [ ] Support de métadonnées personnalisées
-
-## 📄 Licence
-
-MIT
+Le nettoyage s'exécute au premier passage puis toutes les heures. `/api/cleanup` permet aussi un déclenchement protégé par `CLEANUP_TOKEN`. Les suppressions S3 échouées restent suivies en base pour être réessayées.
