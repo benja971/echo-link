@@ -20,6 +20,7 @@
     "lint": "bun --filter web check && bun --filter @echo-link/db check && bun --filter bot check",
     "format": "prettier --write .",
     "test": "bun test apps/web/tests/receive.test.ts apps/web/tests/accounts.test.ts apps/web/tests/http.test.ts apps/web/tests/storage.test.ts apps/web/tests/finalize.test.ts apps/web/tests/validation.test.ts",
+    "test:integration": "RUN_INTEGRATION=1 bun test tests/integration",
     "set-upload-tier": "bun scripts/set-upload-tier.ts",
     "check": "bun run lint && bun run test && bun run build"
   },
