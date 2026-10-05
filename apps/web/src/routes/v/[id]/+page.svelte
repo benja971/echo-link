@@ -1,23 +1,23 @@
 <script lang="ts">
-  import Brand from '$components/Brand.svelte';
-  import ShareLinkBar from '$components/ShareLinkBar.svelte';
-  import QrCode from '$components/QrCode.svelte';
-  import { formatFileSize, formatExpiresIn } from '$lib/utils/format';
+  import Brand from "$components/Brand.svelte";
+  import ShareLinkBar from "$components/ShareLinkBar.svelte";
+  import QrCode from "$components/QrCode.svelte";
+  import { formatFileSize, formatExpiresIn } from "$lib/utils/format";
 
   let { data } = $props();
   const file = $derived(data.file);
   const fileUrl = $derived(data.fileUrl);
   const thumbUrl = $derived(data.thumbUrl);
   const shareUrl = $derived(data.shareUrl);
-  const isVideo = $derived(file.mimeType.startsWith('video/'));
-  const isImage = $derived(file.mimeType.startsWith('image/'));
-  const isAudio = $derived(file.mimeType.startsWith('audio/'));
+  const isVideo = $derived(file.mimeType.startsWith("video/"));
+  const isImage = $derived(file.mimeType.startsWith("image/"));
+  const isAudio = $derived(file.mimeType.startsWith("audio/"));
 </script>
 
 <svelte:head>
-  <title>{file.title ?? 'shared'} · echo·link</title>
+  <title>{file.title ?? "shared"} · echo·link</title>
   <!-- Open Graph -->
-  <meta property="og:title" content={file.title ?? 'shared file'} />
+  <meta property="og:title" content={file.title ?? "shared file"} />
   <meta property="og:url" content={shareUrl} />
   <meta property="og:site_name" content="echo·link" />
   {#if isVideo}
@@ -50,56 +50,155 @@
   {/if}
 </svelte:head>
 
-<header class="flex items-center justify-between border-b border-surface0 px-7 py-4">
+<header
+  class="flex flex-wrap items-center justify-between gap-3 border-b border-surface0 px-5 py-4 sm:px-7"
+>
   <Brand />
-  <a href="/" class="text-xs text-subtext0 hover:text-text">create your own →</a>
+  <a
+    href="/"
+    class="inline-flex min-h-11 items-center text-sm text-subtext0 hover:text-text"
+    >Upload a file</a
+  >
 </header>
 
-<main class="mx-auto max-w-4xl px-8 py-12">
-  <div class="overflow-hidden rounded-xl border border-surface0 bg-mantle">
-    <div class="relative aspect-video bg-gradient-to-br from-surface1 to-crust">
+<main
+  id="main-content"
+  class="share-page mx-auto w-full max-w-4xl px-4 py-6 sm:px-8 sm:py-12"
+>
+  <div
+    class="share-card overflow-hidden rounded-xl border border-surface0 bg-mantle"
+  >
+    <div class="share-media relative aspect-video bg-crust">
       {#if isVideo}
         <!-- svelte-ignore a11y_media_has_caption — user-uploaded media; captions not available -->
-        <video src={fileUrl} controls poster={thumbUrl ?? undefined} class="h-full w-full"></video>
+        <video
+          src={fileUrl}
+          controls
+          poster={thumbUrl ?? undefined}
+          class="h-full w-full"
+        ></video>
       {:else if isImage}
-        <img src={fileUrl} alt={file.title ?? ''} class="h-full w-full object-contain" />
+        <img
+          src={fileUrl}
+          alt={file.title ?? ""}
+          class="h-full w-full object-contain"
+        />
       {:else if isAudio}
         <div class="grid h-full place-items-center">
-          <audio src={fileUrl} controls></audio>
+          <audio src={fileUrl} controls class="max-w-full"></audio>
         </div>
       {:else}
-        <div class="grid h-full place-items-center font-mono text-overlay1">{file.mimeType}</div>
+        <div
+          class="grid h-full place-items-center break-all px-4 font-mono text-subtext0"
+        >
+          {file.mimeType}
+        </div>
       {/if}
     </div>
-    <div class="grid grid-cols-[1fr_auto] gap-6 p-6">
-      <div>
-        <h2 class="mb-2 text-2xl font-medium tracking-tight">{file.title ?? 'shared file'}</h2>
-        <div class="font-mono text-xs text-overlay1 tracking-wide">
+    <div
+      class="share-info flex flex-col gap-5 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-6"
+    >
+      <div class="min-w-0">
+        <h1
+          class="mb-2 break-words text-2xl font-medium tracking-tight [overflow-wrap:anywhere]"
+        >
+          {file.title ?? "shared file"}
+        </h1>
+        <div class="share-metadata break-words font-mono text-sm text-subtext0">
           {file.mimeType}
-          <span class="mx-1.5 text-subtext0">·</span>{formatFileSize(file.sizeBytes)}
+          <span class="mx-1.5 text-subtext0">·</span>{formatFileSize(
+            file.sizeBytes,
+          )}
           {#if file.width && file.height}
-            <span class="mx-1.5 text-subtext0">·</span>{file.width}×{file.height}
+            <span class="mx-1.5 text-subtext0">·</span
+            >{file.width}×{file.height}
           {/if}
-          <span class="mx-1.5 text-subtext0">·</span>{formatExpiresIn(file.expiresAt)}
+          <span class="mx-1.5 text-subtext0">·</span>{formatExpiresIn(
+            file.expiresAt,
+          )}
         </div>
       </div>
-      <div class="flex gap-2">
-        <a href={fileUrl} download class="rounded-md border border-surface1 bg-surface0 px-3.5 py-2 font-mono text-[11px] text-subtext1 transition-colors hover:bg-surface1 hover:text-text">
-          ↓ download
+      <div class="flex shrink-0 gap-2">
+        <a
+          href={fileUrl}
+          download
+          class="ui-button ui-button-primary inline-flex min-h-11 w-full items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent sm:w-auto"
+        >
+          Download file
         </a>
       </div>
     </div>
-    <ShareLinkBar url={shareUrl} title={file.title ?? 'file'} mime={file.mimeType} />
+    <ShareLinkBar
+      {fileUrl}
+      url={shareUrl}
+      title={file.title ?? "file"}
+      mime={file.mimeType}
+    />
   </div>
 
-  <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-    <div class="rounded-md border border-surface0 bg-mantle p-4">
-      <div class="mb-3 font-mono text-[10px] uppercase tracking-wider text-overlay1">qr · mobile-to-mobile</div>
-      <div class="flex justify-center"><QrCode value={shareUrl} size={120} /></div>
+  <details class="device-share mt-6 border-t border-surface0 pt-2 sm:hidden">
+    <summary
+      class="ui-button flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-md border border-surface1 bg-mantle px-3 text-sm text-text"
+    >
+      Show QR code
+      <svg
+        aria-hidden="true"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg
+      >
+    </summary>
+    <div class="py-3"><QrCode value={shareUrl} size={120} /></div>
+  </details>
+  <div class="mt-8 hidden border-t border-surface0 pt-6 sm:block">
+    <div class="mb-3 text-sm font-medium text-subtext0">
+      Open on another device
     </div>
-    <div class="rounded-md border border-surface0 bg-mantle p-4">
-      <div class="mb-3 font-mono text-[10px] uppercase tracking-wider text-overlay1">embed · markdown</div>
-      <pre class="whitespace-pre-wrap rounded bg-crust p-3 font-mono text-[11px] leading-relaxed text-text">[{file.title ?? 'file'}]({shareUrl})</pre>
-    </div>
+    <div class="flex"><QrCode value={shareUrl} size={120} /></div>
   </div>
 </main>
+
+<style>
+  .device-share summary svg {
+    transition: transform 150ms;
+  }
+  .device-share[open] summary svg {
+    transform: rotate(180deg);
+  }
+  @media (max-width: 639px) {
+    .share-page {
+      padding-top: 16px;
+      padding-bottom: 32px;
+    }
+    .share-card {
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      overflow: visible;
+    }
+    .share-media {
+      border-radius: 8px;
+      overflow: hidden;
+      max-height: 32vh;
+    }
+    .share-info {
+      padding: 18px 0 20px;
+      gap: 18px;
+    }
+    .share-info h1 {
+      font-size: 20px;
+      line-height: 26px;
+      margin-bottom: 8px;
+    }
+    .share-metadata {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      line-height: 20px;
+    }
+  }
+</style>
