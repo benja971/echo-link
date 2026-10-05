@@ -1,9 +1,10 @@
 <script lang="ts">
-  import type { File } from '@echo-link/db';
-  import { fade, scale } from 'svelte/transition';
-  import { onMount, tick } from 'svelte';
-  import { formatFileSize, formatExpiresIn } from '$lib/utils/format';
-  import { uploadErrorMessage, readErrorCode } from '$lib/utils/errors';
+  import { modal } from "$lib/actions/modal";
+  import { copyText } from "$lib/utils/clipboard";
+  import type { File } from "@echo-link/db";
+  import { tick, untrack } from "svelte";
+  import { formatFileSize, formatExpiresIn } from "$lib/utils/format";
+  import { uploadErrorMessage, readErrorCode } from "$lib/utils/errors";
 
   type Props = {
     file: File | null;
@@ -14,19 +15,27 @@
      *  shortcut on /app to skip the extra Edit-button click. */
     startInEdit?: boolean;
   };
-  let { file, onClose, onDeleted, onUpdated, startInEdit = false }: Props = $props();
+  let {
+    file,
+    onClose,
+    onDeleted,
+    onUpdated,
+    startInEdit = false,
+  }: Props = $props();
 
-  const fileUrl = $derived(file ? `/files/${file.s3Key}` : '');
+  const fileUrl = $derived(file ? `/files/${file.s3Key}` : "");
   const shareUrl = $derived(
-    file && typeof window !== 'undefined'
+    file && typeof window !== "undefined"
       ? `${window.location.origin}/v/${file.slug ?? file.id}`
-      : ''
+      : "",
   );
-  const isVideo = $derived(file?.mimeType.startsWith('video/') ?? false);
-  const isImage = $derived(file?.mimeType.startsWith('image/') ?? false);
-  const isAudio = $derived(file?.mimeType.startsWith('audio/') ?? false);
+  const isVideo = $derived(file?.mimeType.startsWith("video/") ?? false);
+  const isImage = $derived(file?.mimeType.startsWith("image/") ?? false);
+  const isAudio = $derived(file?.mimeType.startsWith("audio/") ?? false);
 
   let copied = $state(false);
+  let copyFailed = $state(false);
+  let openedFileId: string | null = null;
   let deleting = $state(false);
   let deleteError = $state<string | null>(null);
   let deleteArmed = $state(false);
@@ -34,16 +43,16 @@
 
   // Edit-mode state
   let editing = $state(false);
-  let titleDraft = $state('');
-  let slugDraft = $state('');
+  let titleDraft = $state("");
+  let slugDraft = $state("");
   let saving = $state(false);
   let editError = $state<string | null>(null);
   let titleInputEl: HTMLInputElement | null = $state(null);
 
   async function copyLink() {
     if (!shareUrl) return;
-    await navigator.clipboard.writeText(shareUrl);
-    copied = true;
+    copied = await copyText(shareUrl);
+    copyFailed = !copied;
     setTimeout(() => (copied = false), 1400);
   }
 
@@ -67,7 +76,7 @@
     deleting = true;
     deleteError = null;
     try {
-      const res = await fetch(`/api/files/${file.id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/files/${file.id}`, { method: "DELETE" });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         deleteError = body.message ?? `delete failed (${res.status})`;
@@ -77,7 +86,7 @@
       onDeleted?.(id);
       onClose();
     } catch (e) {
-      deleteError = e instanceof Error ? e.message : 'delete failed';
+      deleteError = e instanceof Error ? e.message : "delete failed";
     } finally {
       deleting = false;
     }
@@ -85,8 +94,8 @@
 
   async function enterEdit() {
     if (!file) return;
-    titleDraft = file.title ?? '';
-    slugDraft = file.slug ?? '';
+    titleDraft = file.title ?? "";
+    slugDraft = file.slug ?? "";
     editError = null;
     editing = true;
     await tick();
@@ -94,9 +103,11 @@
     titleInputEl?.select();
   }
 
-  function cancelEdit() {
+  async function cancelEdit() {
     editing = false;
     editError = null;
+    await tick();
+    document.getElementById("preview-edit")?.focus();
   }
 
   async function saveEdit() {
@@ -106,20 +117,22 @@
     const patch: { title?: string | null; slug?: string | null } = {};
     const newTitle = titleDraft.trim();
     const newSlug = slugDraft.trim().toLowerCase();
-    if (newTitle !== (file.title ?? '')) patch.title = newTitle === '' ? null : newTitle;
-    if (newSlug !== (file.slug ?? '')) patch.slug = newSlug === '' ? null : newSlug;
+    if (newTitle !== (file.title ?? ""))
+      patch.title = newTitle === "" ? null : newTitle;
+    if (newSlug !== (file.slug ?? ""))
+      patch.slug = newSlug === "" ? null : newSlug;
 
     if (Object.keys(patch).length === 0) {
-      editing = false;
+      await cancelEdit();
       saving = false;
       return;
     }
 
     try {
       const res = await fetch(`/api/files/${file.id}`, {
-        method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(patch)
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(patch),
       });
       if (!res.ok) {
         const code = await readErrorCode(res);
@@ -128,83 +141,68 @@
       }
       const body = (await res.json()) as { file: File };
       onUpdated?.(body.file);
-      editing = false;
+      await cancelEdit();
     } catch (e) {
-      editError = e instanceof Error ? e.message : 'save failed';
+      editError = e instanceof Error ? e.message : "save failed";
     } finally {
       saving = false;
     }
   }
 
   function onEditKey(e: KeyboardEvent) {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    if (!(e.target instanceof HTMLInputElement)) return;
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       void saveEdit();
-    } else if (e.key === 'Enter' && !e.shiftKey) {
+    } else if (e.key === "Enter" && !e.shiftKey) {
       // Allow Enter to submit when focus is on a single-line input
       e.preventDefault();
       void saveEdit();
     }
   }
 
-  // Reset state when the modal closes or switches files
   $effect(() => {
-    if (!file) {
-      clearArm();
-      editing = false;
-      editError = null;
-    }
+    const id = file?.id ?? null;
+    const shouldEdit = startInEdit;
+    if (id === openedFileId) return;
+    openedFileId = id;
+    clearArm();
+    copied = false;
+    copyFailed = false;
+    editing = false;
+    editError = null;
+    deleteError = null;
+    if (id && shouldEdit) untrack(() => void enterEdit());
   });
 
-  // Honour startInEdit when the file appears
-  $effect(() => {
-    if (file && startInEdit && !editing) {
-      void enterEdit();
-    }
-  });
-
-  onMount(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key !== 'Escape' || !file) return;
-      if (editing) {
-        e.stopPropagation();
-        cancelEdit();
-      } else {
-        onClose();
-      }
-    }
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  });
+  function cancelDialog(event: Event) {
+    event.preventDefault();
+    if (editing) cancelEdit();
+    else onClose();
+  }
 </script>
 
 {#if file}
-  <button
-    type="button"
-    aria-label="close preview"
-    class="fixed inset-0 z-50 cursor-zoom-out bg-crust/80 backdrop-blur-md"
-    onclick={onClose}
-    transition:fade={{ duration: 180 }}
-  ></button>
-
-  <div
-    role="dialog"
-    aria-modal="true"
-    class="fixed inset-0 z-50 grid place-items-center p-6 pointer-events-none"
+  <dialog
+    use:modal={onClose}
+    oncancel={cancelDialog}
+    aria-label={`File preview: ${file.title ?? file.s3Key}`}
+    class="preview-modal m-auto max-h-[calc(100dvh-32px)] max-w-[calc(100vw-32px)] rounded-xl border border-surface1 bg-mantle p-0 text-text"
   >
     <div
-      class="relative pointer-events-auto flex max-h-[88vh] max-w-[92vw] flex-col overflow-hidden rounded-xl border border-surface1 bg-mantle shadow-2xl"
-      transition:scale={{ duration: 220, start: 0.96, opacity: 0 }}
+      class="preview-content relative flex max-h-[calc(100dvh-32px)] max-w-full flex-col overflow-y-auto"
     >
       <!-- Media area — min-h-0 + overflow-hidden lets it shrink so the
            footer/edit form below stays visible. The media element keeps
            its own max-h-[72vh] / max-w-[88vw] caps so the modal doesn't
            blow up to the video's intrinsic size. -->
-      <div class="grid min-h-0 place-items-center overflow-hidden bg-crust">
+      <div
+        class="preview-media grid min-h-0 place-items-center overflow-hidden bg-crust"
+      >
         {#if isImage}
           <img
             src={fileUrl}
-            alt={file.title ?? ''}
+            alt={file.title ?? ""}
             class="block max-h-[72vh] max-w-[88vw] object-contain"
           />
         {:else if isVideo}
@@ -216,20 +214,45 @@
             class="block max-h-[72vh] max-w-[88vw]"
           ></video>
         {:else if isAudio}
-          <div class="grid place-items-center px-12 py-16">
-            <div class="mb-4 font-mono text-5xl text-accent">♪</div>
-            <audio src={fileUrl} controls class="min-w-[320px]"></audio>
+          <div
+            class="grid w-[min(28rem,calc(100vw-32px))] min-w-0 place-items-center px-4 py-12 sm:px-12 sm:py-16"
+          >
+            <svg
+              aria-hidden="true"
+              class="mb-4 h-10 w-10 text-accent"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              ><path d="M9 18V5l11-2v13M9 7l11-2" /><ellipse
+                cx="6"
+                cy="18"
+                rx="3"
+                ry="2"
+              /><ellipse cx="17" cy="16" rx="3" ry="2" /></svg
+            >
+            <audio src={fileUrl} controls class="w-full max-w-full"></audio>
           </div>
         {:else}
-          <div class="grid place-items-center px-12 py-16 text-center">
-            <div class="mb-3 font-mono text-5xl text-overlay1">○</div>
+          <div
+            class="grid w-[min(28rem,calc(100vw-32px))] min-w-0 place-items-center px-4 py-12 sm:px-12 sm:py-16 text-center"
+          >
+            <svg
+              aria-hidden="true"
+              class="mb-3 h-10 w-10 text-subtext1"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              ><path d="M14 2H5v20h14V7zM14 2v5h5M8 12h8M8 16h8" /></svg
+            >
             <p class="font-mono text-sm text-subtext0">{file.mimeType}</p>
             <a
               href={fileUrl}
               download
-              class="mt-4 inline-flex items-center gap-2 rounded-md border border-surface1 bg-surface0 px-3 py-2 font-mono text-xs text-text hover:bg-surface1"
+              class="ui-button mt-4 inline-flex items-center gap-2 rounded-md border border-surface1 bg-surface0 px-3 py-2 font-mono text-xs text-text hover:bg-surface1"
             >
-              ↓ download
+              Download
             </a>
           </div>
         {/if}
@@ -238,28 +261,45 @@
       {#if editing}
         <!-- Edit form replaces footer while editing. shrink-0 keeps the
              save/cancel row visible even when the modal hits max-h. -->
-        <div class="flex shrink-0 flex-col gap-3 border-t border-surface0 bg-mantle px-5 py-4">
+        <div
+          class="preview-editor flex shrink-0 flex-col gap-3 border-t border-surface0 bg-mantle px-5 py-4"
+        >
           <div class="flex flex-col gap-1">
-            <label for="edit-title" class="font-mono text-[11px] uppercase tracking-wide text-overlay1">
+            <label
+              for="edit-title"
+              class="font-mono text-[11px] uppercase tracking-wide text-overlay1"
+            >
               title
             </label>
             <input
               id="edit-title"
+              aria-invalid={Boolean(editError)}
+              aria-describedby={editError ? "preview-edit-error" : undefined}
               bind:value={titleDraft}
               bind:this={titleInputEl}
               onkeydown={onEditKey}
               maxlength={200}
-              class="rounded-md border border-surface1 bg-surface0 px-3 py-2 font-sans text-sm text-text outline-none focus:border-accent"
+              class="min-h-11 rounded-md border border-surface1 bg-surface0 px-3 py-2 font-sans text-base text-text outline-none focus:border-accent"
             />
           </div>
           <div class="flex flex-col gap-1">
-            <label for="edit-slug" class="font-mono text-[11px] uppercase tracking-wide text-overlay1">
+            <label
+              for="edit-slug"
+              class="font-mono text-[11px] uppercase tracking-wide text-overlay1"
+            >
               custom URL
             </label>
-            <div class="flex items-stretch overflow-hidden rounded-md border border-surface1 bg-surface0 focus-within:border-accent">
-              <span class="grid place-items-center px-3 font-mono text-xs text-overlay1">/v/</span>
+            <div
+              class="flex items-stretch overflow-hidden rounded-md border border-surface1 bg-surface0 focus-within:border-accent"
+            >
+              <span
+                class="grid place-items-center px-3 font-mono text-xs text-overlay1"
+                >/v/</span
+              >
               <input
                 id="edit-slug"
+                aria-invalid={Boolean(editError)}
+                aria-describedby={editError ? "preview-edit-error" : undefined}
                 bind:value={slugDraft}
                 onkeydown={onEditKey}
                 placeholder="leave empty to use UUID"
@@ -267,62 +307,82 @@
                 spellcheck="false"
                 autocapitalize="none"
                 autocorrect="off"
-                class="flex-1 bg-transparent py-2 pr-3 font-mono text-sm text-text outline-none placeholder:text-overlay0"
+                class="min-w-0 flex-1 bg-transparent py-2 pr-3 font-mono text-base text-text outline-none placeholder:text-overlay0"
               />
             </div>
           </div>
-          <div class="flex items-center justify-between gap-4">
-            <div class="min-w-0 flex-1 truncate font-mono text-xs text-red">
-              {editError ?? ''}
+          <div
+            class="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div
+              id="preview-edit-error"
+              role="alert"
+              class="min-w-0 flex-1 break-words text-sm text-red"
+            >
+              {editError ?? ""}
             </div>
-            <div class="flex shrink-0 gap-2">
+            <div class="preview-actions flex shrink-0 flex-wrap gap-2">
               <button
                 type="button"
                 onclick={cancelEdit}
                 disabled={saving}
-                class="inline-flex items-center rounded-md border border-surface1 bg-surface0 px-3 py-2 font-mono text-xs text-subtext1 transition-colors hover:bg-surface1 hover:text-text disabled:opacity-60"
+                class="ui-button inline-flex min-h-11 items-center rounded-md border border-surface1 bg-surface0 px-3 py-2 text-sm text-subtext1 transition-colors disabled:opacity-60"
               >
-                cancel
+                Cancel
               </button>
               <button
                 type="button"
                 onclick={saveEdit}
                 disabled={saving}
-                class="inline-flex items-center rounded-md border border-accent/40 px-3 py-2 font-mono text-xs text-accent transition-colors hover:border-accent disabled:opacity-60"
-                style:background-color="color-mix(in oklab, var(--color-accent) 12%, transparent)"
+                class="ui-button ui-button-primary inline-flex min-h-11 items-center rounded-md border border-accent/40 px-3 py-2 text-sm text-accent transition-colors disabled:opacity-60"
               >
-                {saving ? 'saving…' : '↵ save'}
+                {saving ? "Saving…" : "Save"}
               </button>
             </div>
           </div>
         </div>
       {:else}
         <!-- Footer with metadata + actions -->
-        <div class="flex shrink-0 items-center justify-between gap-4 border-t border-surface0 bg-mantle px-5 py-3">
+        <div
+          class="preview-footer flex shrink-0 flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-center border-t border-surface0 bg-mantle px-5 py-3"
+        >
           <div class="min-w-0 flex-1">
-            <div class="truncate text-sm font-medium text-text">{file.title ?? file.s3Key}</div>
-            <div class="font-mono text-xs text-overlay1">
+            <div
+              id="preview-title"
+              class="break-words text-sm font-medium text-text"
+            >
+              {file.title ?? file.s3Key}
+            </div>
+            <div
+              class="preview-metadata break-words font-mono text-xs text-overlay1"
+            >
               {file.mimeType}
-              <span class="mx-1.5 text-subtext0">·</span>{formatFileSize(file.sizeBytes)}
+              <span class="mx-1.5 text-subtext0">·</span>{formatFileSize(
+                file.sizeBytes,
+              )}
               {#if file.width && file.height}
-                <span class="mx-1.5 text-subtext0">·</span>{file.width}×{file.height}
+                <span class="mx-1.5 text-subtext0">·</span
+                >{file.width}×{file.height}
               {/if}
-              <span class="mx-1.5 text-subtext0">·</span>{formatExpiresIn(file.expiresAt)}
+              <span class="mx-1.5 text-subtext0">·</span>{formatExpiresIn(
+                file.expiresAt,
+              )}
               {#if file.slug}
                 <span class="mx-1.5 text-subtext0">·</span>
                 <span class="text-accent">/v/{file.slug}</span>
               {/if}
             </div>
           </div>
-          <div class="flex shrink-0 gap-2">
+          <div class="preview-actions flex shrink-0 flex-wrap gap-2">
             {#if onUpdated}
               <button
                 type="button"
+                id="preview-edit"
                 onclick={enterEdit}
                 title="rename or set a custom URL"
-                class="inline-flex items-center rounded-md border border-surface1 bg-surface0 px-3 py-2 font-mono text-xs text-subtext1 transition-colors hover:bg-surface1 hover:text-text"
+                class="ui-button inline-flex min-h-11 items-center rounded-md border border-surface1 bg-surface0 px-3 py-2 text-sm text-subtext1 transition-colors"
               >
-                ✎ edit
+                Edit
               </button>
             {/if}
             {#if onDeleted}
@@ -330,39 +390,58 @@
                 type="button"
                 onclick={onDeleteClick}
                 disabled={deleting}
-                title={deleteArmed ? 'click again within 3s to confirm' : 'delete this file permanently'}
-                class="inline-flex min-w-[7.5rem] items-center justify-center rounded-md border px-3 py-2 font-mono text-xs transition-colors disabled:opacity-60 {deleteArmed
-                  ? 'border-red bg-red/15 text-red hover:bg-red/25'
-                  : 'border-surface1 bg-surface0 text-subtext1 hover:border-red/40 hover:bg-red/10 hover:text-red'}"
+                title={deleteArmed
+                  ? "click again within 3s to confirm"
+                  : "delete this file permanently"}
+                class="ui-button ui-button-danger inline-flex min-h-11 min-w-[7.5rem] items-center justify-center rounded-md border px-3 py-2 text-sm transition-colors disabled:opacity-60 {deleteArmed
+                  ? 'border-red bg-red/15 text-red '
+                  : 'border-surface1 bg-surface0 text-subtext1 '}"
               >
                 {#if deleting}
                   deleting…
                 {:else if deleteArmed}
-                  ✕ click again
+                  Confirm delete
                 {:else}
-                  ✕ delete
+                  Delete
                 {/if}
               </button>
             {/if}
             <a
               href={fileUrl}
               download
-              class="inline-flex items-center rounded-md border border-surface1 bg-surface0 px-3 py-2 font-mono text-xs text-subtext1 transition-colors hover:bg-surface1 hover:text-text"
+              class="ui-button inline-flex min-h-11 items-center rounded-md border border-surface1 bg-surface0 px-3 py-2 text-sm text-subtext1 transition-colors hover:bg-surface1 hover:text-text"
             >
-              ↓ download
+              Download
             </a>
             <button
               type="button"
               onclick={copyLink}
-              class="inline-flex items-center rounded-md border border-accent/40 px-3 py-2 font-mono text-xs text-accent transition-colors hover:border-accent"
-              style:background-color="color-mix(in oklab, var(--color-accent) 12%, transparent)"
+              class="ui-button ui-button-primary inline-flex min-h-11 items-center rounded-md border border-accent/40 px-3 py-2 text-sm text-accent transition-colors"
             >
-              {copied ? '✓ copied' : '⎘ copy link'}
+              {copied ? "Copied" : "Copy link"}
             </button>
           </div>
         </div>
+        <p role="status" class="sr-only">{copied ? "Link copied" : ""}</p>
+        {#if copyFailed}
+          <div class="border-t border-surface0 px-5 py-3">
+            <p role="status" class="mb-2 text-sm text-subtext1">
+              Copy unavailable. Select and copy this link:
+            </p>
+            <input
+              aria-label="Share link"
+              value={shareUrl}
+              readonly
+              onclick={(event) => event.currentTarget.select()}
+              class="min-h-11 w-full min-w-0 rounded border border-surface1 bg-surface0 px-3 text-base text-text"
+            />
+          </div>
+        {/if}
         {#if deleteError}
-          <div class="border-t border-red/20 bg-red/5 px-5 py-2 font-mono text-xs text-red">
+          <div
+            role="alert"
+            class="border-t border-red/20 bg-red/5 px-5 py-2 font-mono text-xs text-red"
+          >
             {deleteError}
           </div>
         {/if}
@@ -371,12 +450,85 @@
       <!-- Close button (top-right corner of the modal) -->
       <button
         type="button"
-        aria-label="close"
+        aria-label="Close preview"
+        data-dialog-focus
         onclick={onClose}
-        class="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-crust/70 font-mono text-sm text-subtext0 backdrop-blur transition-colors hover:bg-crust hover:text-text"
+        class="ui-button absolute right-3 top-3 grid h-11 w-11 place-items-center rounded-full bg-crust/70 font-mono text-sm text-subtext0 backdrop-blur transition-colors"
       >
-        ×
+        <svg
+          aria-hidden="true"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"><path d="m6 6 12 12M18 6 6 18" /></svg
+        >
       </button>
     </div>
-  </div>
+  </dialog>
 {/if}
+
+<style>
+  .preview-modal::backdrop {
+    background: color-mix(in srgb, var(--color-crust) 80%, transparent);
+  }
+  @media (max-width: 639px) {
+    .preview-modal {
+      width: calc(100% - 16px);
+      max-width: calc(100% - 16px);
+      max-height: calc(100dvh - 16px);
+    }
+    .preview-content {
+      width: 100%;
+      max-height: calc(100dvh - 16px);
+    }
+    .preview-media {
+      flex-shrink: 0;
+      min-height: 120px;
+    }
+    .preview-media :global(img),
+    .preview-media :global(video) {
+      max-width: 100%;
+      max-height: 40dvh;
+    }
+    .preview-media > div {
+      width: 100%;
+      padding: 48px 16px 24px;
+    }
+    .preview-footer,
+    .preview-editor {
+      padding: 20px 16px max(20px, env(safe-area-inset-bottom));
+      gap: 20px;
+    }
+    #preview-title {
+      font-size: 20px;
+      line-height: 26px;
+      margin-bottom: 8px;
+      overflow-wrap: anywhere;
+    }
+    .preview-metadata {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      line-height: 20px;
+    }
+    .preview-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .preview-actions :global(button),
+    .preview-actions :global(a) {
+      justify-content: center;
+      min-width: 0;
+      min-height: 44px;
+    }
+    .preview-actions :global(a[download]) {
+      grid-row: 1;
+      grid-column: 1;
+    }
+    .preview-actions :global(button.ui-button-primary) {
+      grid-row: 1;
+      grid-column: 2;
+    }
+  }
+</style>

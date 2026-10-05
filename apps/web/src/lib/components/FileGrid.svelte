@@ -1,8 +1,8 @@
 <!-- apps/web/src/lib/components/FileGrid.svelte -->
 <script lang="ts">
-  import type { File } from '@echo-link/db';
-  import { mimeKind, mimeIcon, mimeColor } from '$lib/utils/mime';
-  import { formatFileSize } from '$lib/utils/format';
+  import type { File } from "@echo-link/db";
+  import { mimeKind, mimeIcon, mimeColor } from "$lib/utils/mime";
+  import { formatFileSize } from "$lib/utils/format";
   type Props = {
     files: File[];
     onSelect?: (file: File) => void;
@@ -14,15 +14,26 @@
     /** Set of "marked" file ids (multi-select). Marked tiles get a
      *  checkmark badge + filled accent corner. */
     markedIds?: Set<string>;
+    onToggleMark?: (id: string) => void;
+    markingDisabled?: boolean;
+    onFocus?: (file: File) => void;
   };
-  let { files, onSelect, selectedId = null, markedIds }: Props = $props();
+  let {
+    files,
+    onSelect,
+    selectedId = null,
+    markedIds,
+    onToggleMark,
+    markingDisabled = false,
+    onFocus,
+  }: Props = $props();
 
   /** URL of a thumbnail-suitable image for this file, or null. Prefer the
    *  server-side webp thumbnail (256×256) when available; fall back to the
    *  original image for legacy files uploaded before the thumb pipeline. */
   function thumbUrl(file: File): string | null {
     if (file.thumbnailS3Key) return `/files/${file.thumbnailS3Key}`;
-    if (file.mimeType.startsWith('image/')) return `/files/${file.s3Key}`;
+    if (file.mimeType.startsWith("image/")) return `/files/${file.s3Key}`;
     return null;
   }
 
@@ -38,61 +49,81 @@
   function onDragStart(e: DragEvent, file: File) {
     if (!e.dataTransfer) return;
     const url = shareUrlOf(file);
-    e.dataTransfer.effectAllowed = 'copyLink';
-    e.dataTransfer.setData('text/uri-list', url);
-    e.dataTransfer.setData('text/plain', url);
-    e.dataTransfer.setData('application/x-echo-link-internal', '1');
+    e.dataTransfer.effectAllowed = "copyLink";
+    e.dataTransfer.setData("text/uri-list", url);
+    e.dataTransfer.setData("text/plain", url);
+    e.dataTransfer.setData("application/x-echo-link-internal", "1");
   }
 </script>
 
-<div class="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
+<!-- svelte-ignore a11y_no_noninteractive_tabindex - the collection receives focus for scoped keyboard navigation. -->
+<div
+  data-file-grid
+  role="region"
+  aria-label="File collection. Use J and K to navigate, Space to select."
+  tabindex="0"
+  class="grid grid-cols-2 gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent sm:grid-cols-4 md:grid-cols-6"
+>
   {#each files as file}
     {@const kind = mimeKind(file.mimeType)}
     {@const url = thumbUrl(file)}
     {@const isMarked = markedIds?.has(file.id) ?? false}
     {@const isFocused = selectedId === file.id}
-    <button
-      onclick={() => onSelect?.(file)}
-      draggable="true"
-      ondragstart={(e) => onDragStart(e, file)}
-      data-file-id={file.id}
-      class="relative aspect-square cursor-grab overflow-hidden rounded-md border bg-gradient-to-br from-surface0 to-mantle font-mono text-2xl text-{mimeColor(kind)} transition-all duration-200 [transition-timing-function:var(--ease-out-expo)] hover:-translate-y-0.5 hover:scale-[1.02] hover:border-accent active:cursor-grabbing {isFocused
-        ? 'border-accent scale-[1.04]'
-        : isMarked
+    <div class="relative min-w-0">
+      <button
+        aria-label={`Open ${file.title ?? file.s3Key}`}
+        onclick={() => onSelect?.(file)}
+        onfocus={() => onFocus?.(file)}
+        draggable="true"
+        ondragstart={(e) => onDragStart(e, file)}
+        data-file-id={file.id}
+        class="relative w-full aspect-square cursor-grab overflow-hidden rounded-md border bg-surface0 font-mono text-2xl text-{mimeColor(
+          kind,
+        )} transition-all duration-200 [transition-timing-function:var(--ease-out-expo)] hover:border-accent active:cursor-grabbing {isFocused
           ? 'border-accent'
-          : 'border-surface0'}"
-      style:box-shadow={isFocused
-        ? '0 0 0 2px var(--color-accent), 0 8px 24px color-mix(in oklab, var(--color-accent) 25%, transparent)'
-        : isMarked
-          ? '0 0 0 2px var(--color-accent)'
-          : ''}
-      title={`${file.title ?? file.s3Key} — drag to share`}
-    >
-      {#if url}
-        <img
-          src={url}
-          alt={file.title ?? ''}
-          loading="lazy"
-          decoding="async"
-          draggable="false"
-          class="absolute inset-0 h-full w-full object-cover"
-        />
-        <!-- subtle gradient at the bottom so the size badge stays readable over light images -->
-        <div class="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-crust/80 to-transparent"></div>
-      {:else}
-        <div class="grid h-full place-items-center">{mimeIcon(kind)}</div>
-      {/if}
-      <span class="absolute right-1.5 bottom-1 font-sans text-[10px] font-medium tracking-wide text-text [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]">
-        {formatFileSize(file.sizeBytes)}
-      </span>
-      {#if isMarked}
+          : isMarked
+            ? 'border-accent'
+            : 'border-surface0'}"
+        style:box-shadow={isFocused
+          ? "0 0 0 2px var(--color-accent)"
+          : isMarked
+            ? "0 0 0 2px var(--color-accent)"
+            : ""}
+        title={`${file.title ?? file.s3Key} — drag to share`}
+      >
+        {#if url}
+          <img
+            src={url}
+            alt={file.title ?? ""}
+            loading="lazy"
+            decoding="async"
+            draggable="false"
+            class="absolute inset-0 h-full w-full object-cover"
+          />
+          <!-- subtle gradient at the bottom so the size badge stays readable over light images -->
+        {:else}
+          <div class="grid h-full place-items-center">{mimeIcon(kind)}</div>
+        {/if}
         <span
-          class="absolute left-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full font-sans text-xs font-bold text-crust shadow-md"
-          style:background-color="var(--color-accent)"
+          class="absolute right-1.5 bottom-1.5 rounded bg-mantle px-1.5 py-0.5 font-sans text-xs font-medium text-text"
         >
-          ✓
+          {formatFileSize(file.sizeBytes)}
         </span>
+      </button>
+      {#if onToggleMark}
+        <label
+          class="absolute top-0 left-0 grid h-11 w-11 cursor-pointer place-items-center rounded-br-md bg-base/90"
+        >
+          <input
+            type="checkbox"
+            disabled={markingDisabled}
+            checked={isMarked}
+            onchange={() => onToggleMark?.(file.id)}
+            aria-label={`Select ${file.title ?? file.s3Key}`}
+            class="h-5 w-5 accent-accent"
+          />
+        </label>
       {/if}
-    </button>
+    </div>
   {/each}
 </div>
