@@ -2,9 +2,12 @@ import { randomUUID } from "node:crypto";
 import { request as httpRequest } from "node:http";
 
 const [mode, baseUrl, cookie] = process.argv.slice(2);
+const json = mode === "json-chunked";
 const boundary = `test-${randomUUID()}`;
 const headers = {
-  "content-type": `multipart/form-data; boundary=${boundary}`,
+  "content-type": json
+    ? "application/json"
+    : `multipart/form-data; boundary=${boundary}`,
   origin: baseUrl,
 };
 const prefix = Buffer.from(
@@ -18,7 +21,7 @@ if (cookie) headers.cookie = cookie;
 if (mode === "cancel") headers["x-upload-size"] = "500000";
 headers["transfer-encoding"] = "chunked";
 const request = httpRequest(
-  `${baseUrl}/api/upload`,
+  `${baseUrl}${json ? "/api/auth/request" : "/api/upload"}`,
   { method: "POST", headers },
   async (response) => {
     finished = true;
@@ -36,8 +39,14 @@ request.on("error", (error) => {
     process.exitCode = 1;
   }
 });
-request.write(prefix);
-if (mode === "cancel") {
+if (!json) request.write(prefix);
+if (json) {
+  const body = Buffer.from(JSON.stringify({ email: "x".repeat(128 * 1024) }));
+  sent = body.length;
+  request.write(body.subarray(0, 32 * 1024));
+  request.write(body.subarray(32 * 1024, 96 * 1024));
+  request.end(body.subarray(96 * 1024));
+} else if (mode === "cancel") {
   request.write(
     Buffer.concat([Buffer.from("%PDF-1.7\n"), Buffer.alloc(64 * 1024)]),
   );

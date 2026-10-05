@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { createHash, createHmac, randomUUID } from "node:crypto";
 import { access, mkdtemp, readFile, readdir, rm } from "node:fs/promises";
-import { request as httpRequest } from "node:http";
 import { createRequire } from "node:module";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
@@ -674,28 +673,23 @@ integration("production HTTP uploads with PostgreSQL and MinIO", () => {
       body,
     });
     expect(declared.status).toBe(413);
-    const chunked = await new Promise<number>((resolve, reject) => {
-      const request = httpRequest(
-        `${baseUrl}/api/auth/request`,
-        {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            "transfer-encoding": "chunked",
-          },
-        },
-        (response) => {
-          response.resume();
-          response.on("end", () => resolve(response.statusCode!));
-          response.on("error", reject);
-        },
-      );
-      request.on("error", reject);
-      request.write(body.subarray(0, 32 * 1024));
-      request.write(body.subarray(32 * 1024, 96 * 1024));
-      request.end(body.subarray(96 * 1024));
-    });
-    expect(chunked).toBe(413);
+    const chunked = JSON.parse(
+      await command([
+        "node",
+        "tests/integration/http-client.mjs",
+        "json-chunked",
+        baseUrl,
+      ]),
+    );
+    expect(chunked).toMatchObject({ status: 413 });
+    expect(JSON.parse(chunked.body)).toEqual({ message: "request_too_large" });
+    const owner = await account();
+    const resumedUpload = await upload(700_000, owner.cookie);
+    expect({
+      status: resumedUpload.status,
+      body: await resumedUpload.text(),
+    }).toMatchObject({ status: 200 });
+    await assertClean();
   });
 
   test("client cancellation removes partial files and releases quota", async () => {
@@ -726,7 +720,11 @@ integration("production HTTP uploads with PostgreSQL and MinIO", () => {
     }
     await assertClean();
     expect(await objectKeys()).toEqual(before);
-    expect((await upload(700_000, owner.cookie)).status).toBe(200);
+    const resumedUpload = await upload(700_000, owner.cookie);
+    expect({
+      status: resumedUpload.status,
+      body: await resumedUpload.text(),
+    }).toMatchObject({ status: 200 });
     await assertClean();
   }, 20_000);
 });
