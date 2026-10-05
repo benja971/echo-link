@@ -1,45 +1,27 @@
-export const THEMES = ['latte', 'frappe', 'macchiato', 'mocha'] as const;
+export const THEMES = ["light", "dark"] as const;
 export type Theme = (typeof THEMES)[number];
-
-export const ACCENTS = [
-  'mauve',
-  'peach',
-  'sky',
-  'teal',
-  'green',
-  'yellow',
-  'lavender',
-  'red',
-  'pink',
-  'blue'
-] as const;
+export const ACCENTS = ["blue", "teal", "amber", "rose"] as const;
 export type Accent = (typeof ACCENTS)[number];
 
 class ThemeStore {
-  current = $state<Theme>('mocha');
-  accent = $state<Accent>('mauve');
+  current = $state<Theme>("light");
+  accent = $state<Accent>("blue");
 
   init() {
-    if (typeof document === 'undefined') return;
-    const storedTheme = localStorage.getItem('theme');
-    const storedAccent = localStorage.getItem('accent');
-    this.current = (THEMES as readonly string[]).includes(storedTheme ?? '')
-      ? (storedTheme as Theme)
-      : 'mocha';
-    this.accent = (ACCENTS as readonly string[]).includes(storedAccent ?? '')
-      ? (storedAccent as Accent)
-      : 'mauve';
-    document.documentElement.dataset.theme = this.current;
-    document.documentElement.dataset.accent = this.accent;
+    if (typeof document === "undefined") return;
+    const { dataset } = document.documentElement;
+    this.current = dataset.theme === "dark" ? "dark" : "light";
+    this.accent = (ACCENTS as readonly string[]).includes(dataset.accent ?? "")
+      ? (dataset.accent as Accent)
+      : "blue";
+    dataset.theme = this.current;
+    dataset.accent = this.accent;
   }
 
-  /** Cycle to next theme (used by ⌘T shortcut). */
   cycle() {
-    const i = THEMES.indexOf(this.current);
-    this.setTheme(THEMES[(i + 1) % THEMES.length]!);
+    this.setTheme(this.current === "light" ? "dark" : "light");
   }
 
-  /** Back-compat alias for ⌘T. */
   toggle() {
     this.cycle();
   }
@@ -47,13 +29,20 @@ class ThemeStore {
   setTheme(t: Theme) {
     this.current = t;
     document.documentElement.dataset.theme = t;
-    localStorage.setItem('theme', t);
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", t === "light" ? "#f3f4f0" : "#131316");
+    try {
+      localStorage.setItem("theme", t);
+    } catch {}
   }
 
   setAccent(a: Accent) {
     this.accent = a;
     document.documentElement.dataset.accent = a;
-    localStorage.setItem('accent', a);
+    try {
+      localStorage.setItem("accent", a);
+    } catch {}
   }
 }
 

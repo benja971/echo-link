@@ -1,24 +1,65 @@
 <!doctype html>
-<html lang="en" data-theme="mocha" data-accent="mauve">
+<html lang="en" data-theme="light" data-accent="blue">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="%sveltekit.assets%/favicon.ico" />
-    <link rel="apple-touch-icon" href="%sveltekit.assets%/apple-touch-icon.png" />
+    <link
+      rel="apple-touch-icon"
+      href="%sveltekit.assets%/apple-touch-icon.png"
+    />
     <meta property="og:image" content="%sveltekit.assets%/og-default.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#1e1e2e" />
+    <meta name="theme-color" content="#f3f4f0" />
     <link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
     <script>
-      // Apply saved theme + accent + detected platform before first paint
-      // to avoid FOUC and hydration mismatch on shortcut labels.
+      // Migrate saved preferences before first paint. Store init reads these datasets.
       (function () {
+        var t = "light";
+        var a = "blue";
         try {
-          var t = localStorage.getItem('theme');
-          var a = localStorage.getItem('accent');
-          if (t === 'latte' || t === 'frappe' || t === 'macchiato' || t === 'mocha') document.documentElement.dataset.theme = t;
-          if (a) document.documentElement.dataset.accent = a;
-          var ua = navigator.userAgent || '';
-          document.documentElement.dataset.platform = /Mac|iPhone|iPad|iPod/.test(ua) ? 'mac' : 'pc';
+          var savedTheme = localStorage.getItem("theme");
+          var savedAccent = localStorage.getItem("accent");
+          t =
+            {
+              light: "light",
+              dark: "dark",
+              latte: "light",
+              frappe: "dark",
+              macchiato: "dark",
+              mocha: "dark",
+            }[savedTheme] || "light";
+          a =
+            {
+              blue: "blue",
+              teal: "teal",
+              amber: "amber",
+              rose: "rose",
+              sky: "blue",
+              lavender: "blue",
+              mauve: "blue",
+              peach: "amber",
+              yellow: "amber",
+              green: "teal",
+              red: "rose",
+              pink: "rose",
+            }[savedAccent] || "blue";
+        } catch (e) {}
+        if (t !== "light" && t !== "dark") t = "light";
+        if (["blue", "teal", "amber", "rose"].indexOf(a) === -1) a = "blue";
+        document.documentElement.dataset.theme = t;
+        document.documentElement.dataset.accent = a;
+        document
+          .querySelector('meta[name="theme-color"]')
+          .setAttribute("content", t === "light" ? "#f3f4f0" : "#131316");
+        var ua = navigator.userAgent || "";
+        document.documentElement.dataset.platform = /Mac|iPhone|iPad|iPod/.test(
+          ua,
+        )
+          ? "mac"
+          : "pc";
+        try {
+          localStorage.setItem("theme", t);
+          localStorage.setItem("accent", a);
         } catch (e) {}
       })();
     </script>
