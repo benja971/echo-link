@@ -3,7 +3,11 @@
   "version": "2.0.0-dev",
   "private": true,
   "type": "module",
-  "workspaces": ["apps/web", "apps/bot", "packages/db"],
+  "workspaces": [
+    "apps/web",
+    "apps/bot",
+    "packages/db"
+  ],
   "scripts": {
     "dev": "bun --filter web dev",
     "dev:bot": "bun --filter bot dev",
@@ -14,7 +18,8 @@
     "db:migrate": "bun --filter @echo-link/db migrate",
     "db:studio": "bun --filter @echo-link/db studio",
     "lint": "bun --filter web check",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test": "bun test tests/use-shortcuts.test.js tests/modal.test.ts && bun tests/clipboard-check.mjs && bun tests/delete-files-check.mjs && bun tests/theme-check.mjs && bun tests/contrast-check.mjs && bun tests/variants-check.mjs"
   },
   "devDependencies": {
     "prettier": "^3.3.0",
