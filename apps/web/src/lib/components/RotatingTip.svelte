@@ -33,7 +33,19 @@
     type="button"
     onclick={() => (index = (index + 1) % tips.length)}
     aria-label="Show next keyboard tip"
-    class="ui-button inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-surface1 px-3 text-sm"
-    >Next tip</button
+    title="Next tip"
+    class="ui-button grid h-11 w-11 shrink-0 place-items-center rounded-md border border-surface1"
   >
+    <svg
+      aria-hidden="true"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"><path d="m9 6 6 6-6 6" /></svg
+    >
+  </button>
 </div>

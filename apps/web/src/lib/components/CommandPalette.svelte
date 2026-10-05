@@ -198,10 +198,22 @@
       <button
         type="button"
         aria-label="Close commands"
+        title="Close commands (Esc)"
         onclick={onClose}
-        class="ui-button min-h-11 min-w-11 rounded border border-surface1 bg-surface0 text-sm text-subtext1"
-        >Close</button
+        class="ui-button grid h-11 w-11 shrink-0 place-items-center rounded border border-surface1 bg-surface0 text-subtext1"
       >
+        <svg
+          aria-hidden="true"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"><path d="m6 6 12 12M18 6 6 18" /></svg
+        >
+      </button>
     </div>
 
     {#if fallbackLink}

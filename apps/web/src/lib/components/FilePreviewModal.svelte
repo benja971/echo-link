@@ -451,6 +451,7 @@
       <button
         type="button"
         aria-label="Close preview"
+        title="Close preview (Esc)"
         data-dialog-focus
         onclick={onClose}
         class="ui-button absolute right-3 top-3 grid h-11 w-11 place-items-center rounded-full bg-crust/70 font-mono text-sm text-subtext0 backdrop-blur transition-colors"

@@ -130,9 +130,27 @@
     {#if onMore}
       <button
         onclick={() => onMore(file)}
-        class="ui-button min-h-11 min-w-11 rounded-md px-1.5 text-overlay0"
-        >⋯</button
+        aria-label={`Open ${file.title ?? file.s3Key}`}
+        title="View file"
+        class="ui-button grid h-11 w-11 shrink-0 place-items-center rounded-md text-overlay0"
       >
+        <svg
+          aria-hidden="true"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle
+            cx="12"
+            cy="12"
+            r="3"
+          /></svg
+        >
+      </button>
     {:else}
       <span class="hidden sm:inline"></span>
     {/if}

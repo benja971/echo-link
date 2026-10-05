@@ -452,9 +452,23 @@
       <button
         type="button"
         onclick={() => (paletteOpen = true)}
-        class="ui-button min-h-11 rounded-md border border-surface1 bg-mantle px-4 text-sm text-text"
-        >Menu</button
+        aria-label="Open commands and account settings"
+        aria-haspopup="dialog"
+        title="Menu"
+        class="ui-button grid h-11 w-11 shrink-0 place-items-center rounded-md border border-surface1 bg-mantle text-text"
       >
+        <svg
+          aria-hidden="true"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg
+        >
+      </button>
     </div>
   </header>
 
