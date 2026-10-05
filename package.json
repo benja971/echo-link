@@ -17,16 +17,22 @@
     "db:generate": "bun --filter @echo-link/db generate",
     "db:migrate": "bun --filter @echo-link/db migrate",
     "db:studio": "bun --filter @echo-link/db studio",
-    "lint": "bun --filter web check",
+    "lint": "bun --filter web check && bun --filter @echo-link/db check && bun --filter bot check",
     "format": "prettier --write .",
-    "test": "bun test tests/use-shortcuts.test.js tests/modal.test.ts && bun tests/clipboard-check.mjs && bun tests/delete-files-check.mjs && bun tests/theme-check.mjs && bun tests/contrast-check.mjs && bun tests/variants-check.mjs"
+    "test": "bun run test:backend && bun run test:ui",
+    "test:integration": "RUN_INTEGRATION=1 bun test tests/integration",
+    "set-upload-tier": "bun scripts/set-upload-tier.ts",
+    "check": "bun run lint && bun run test && bun run build",
+    "test:backend": "bun test apps/web/tests/receive.test.ts apps/web/tests/accounts.test.ts apps/web/tests/http.test.ts apps/web/tests/storage.test.ts apps/web/tests/finalize.test.ts apps/web/tests/validation.test.ts",
+    "test:ui": "bun test tests/use-shortcuts.test.js tests/modal.test.ts && bun tests/clipboard-check.mjs && bun tests/delete-files-check.mjs && bun tests/theme-check.mjs && bun tests/contrast-check.mjs && bun tests/variants-check.mjs"
   },
   "devDependencies": {
+    "@types/bun": "^1.4.2",
     "prettier": "^3.3.0",
     "prettier-plugin-svelte": "^3.2.0",
     "prettier-plugin-tailwindcss": "^0.6.0"
   },
   "engines": {
-    "bun": ">=1.1.0"
+    "bun": ">=1.3.0"
   }
 }

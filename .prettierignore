@@ -1,0 +1,9 @@
+**/node_modules/**
+**/build/**
+**/.svelte-kit/**
+**/dist/**
+packages/db/migrations/
+apps/api-legacy/
+public/
+docs/superpowers/
+bun.lock

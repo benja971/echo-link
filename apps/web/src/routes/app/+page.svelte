@@ -136,16 +136,20 @@
   let cheatsheetOpen = $state(false);
 
   const filesPct = $derived(
-    Math.min(
-      100,
-      Math.round((data.stats.fileCount / data.limits.maxFiles) * 100),
-    ),
+    data.limits.maxFiles === null
+      ? 0
+      : Math.min(
+          100,
+          Math.round((data.stats.fileCount / data.limits.maxFiles) * 100),
+        ),
   );
   const bytesPct = $derived(
-    Math.min(
-      100,
-      Math.round((data.stats.totalBytes / data.limits.maxBytes) * 100),
-    ),
+    data.limits.maxBytes === null
+      ? 0
+      : Math.min(
+          100,
+          Math.round((data.stats.totalBytes / data.limits.maxBytes) * 100),
+        ),
   );
   const usagePct = $derived(Math.max(filesPct, bytesPct));
   let recent = $derived(data.files.slice(0, 3));
@@ -461,9 +465,12 @@
       Your files
     </h1>
     <p class="mx-auto mt-2 max-w-3xl px-4 text-sm text-subtext1 sm:hidden">
-      {data.stats.fileCount} of {data.limits.maxFiles} files · {formatFileSize(
+      {data.stats.fileCount}{#if data.limits.maxFiles !== null}
+        {" "}of {data.limits.maxFiles}{/if} files · {formatFileSize(
         data.stats.totalBytes,
-      )} of {formatFileSize(data.limits.maxBytes)}
+      )}{#if data.limits.maxBytes !== null}
+        {" "}of {formatFileSize(data.limits.maxBytes)}{:else}
+        {" "}used{/if}
     </p>
     <section class="hidden px-6 pt-6 text-center sm:block">
       <div
@@ -471,30 +478,36 @@
       >
         <span class="rounded-full bg-surface0 px-2.5 py-1">
           <strong class="text-text">{data.stats.fileCount}</strong>
-          <span class="text-overlay0">/{data.limits.maxFiles}</span> files
+          <span class="text-overlay0"
+            >/ {data.limits.maxFiles ?? "unlimited"}</span
+          > files
         </span>
         <span class="rounded-full bg-surface0 px-2.5 py-1">
           <strong class="text-text"
             >{formatFileSize(data.stats.totalBytes)}</strong
           >
           <span class="text-overlay0"
-            >/ {formatFileSize(data.limits.maxBytes)}</span
+            >/ {data.limits.maxBytes === null
+              ? "unlimited"
+              : formatFileSize(data.limits.maxBytes)}</span
           >
         </span>
-        <span
-          class="relative inline-flex items-center gap-1.5 overflow-hidden rounded-full bg-surface0 px-2.5 py-1"
-          title="usage = max(files used, storage used)"
-        >
+        {#if data.limits.maxFiles !== null || data.limits.maxBytes !== null}
           <span
-            class="absolute inset-y-0 left-0 transition-[width] duration-500 [transition-timing-function:var(--ease-out-expo)]"
-            style:width="{usagePct}%"
-            style:background-color={"color-mix(in oklab, var(--color-accent) 22%, transparent)"}
-          ></span>
-          <span class="relative">
-            <strong class="text-text">{usagePct}%</strong>
-            <span class="text-overlay0">used</span>
+            class="relative inline-flex items-center gap-1.5 overflow-hidden rounded-full bg-surface0 px-2.5 py-1"
+            title="usage = max(files used, storage used)"
+          >
+            <span
+              class="absolute inset-y-0 left-0 transition-[width] duration-500 [transition-timing-function:var(--ease-out-expo)]"
+              style:width="{usagePct}%"
+              style:background-color={"color-mix(in oklab, var(--color-accent) 22%, transparent)"}
+            ></span>
+            <span class="relative">
+              <strong class="text-text">{usagePct}%</strong>
+              <span class="text-overlay0">used</span>
+            </span>
           </span>
-        </span>
+        {/if}
       </div>
     </section>
 

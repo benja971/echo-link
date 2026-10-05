@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "build": "bun build src/index.ts --target=bun --outdir=dist",
-    "start": "bun src/index.ts"
+    "start": "bun src/index.ts",
+    "check": "tsc --noEmit"
   },
   "dependencies": {
     "discord.js": "^14.16.0"

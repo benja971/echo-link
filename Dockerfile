@@ -32,5 +32,5 @@ COPY --from=build /app /app
 # deploy.sh runs them via `bun src/migrate.ts` from packages/db.
 
 EXPOSE 3000
-ENV PORT=3000 HOST=0.0.0.0 NODE_ENV=production
+ENV PORT=3000 HOST=0.0.0.0 NODE_ENV=production BODY_SIZE_LIMIT=Infinity
 CMD ["bun", "apps/web/build/index.js"]

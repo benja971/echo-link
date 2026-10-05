@@ -1,22 +1,26 @@
 // apps/web/src/routes/app/+page.server.ts
-import type { PageServerLoad } from './$types';
-import { listFilesByAccount, getAccountUploadStats } from '$server/files';
-import { env } from '$server/env';
+import type { PageServerLoad } from "./$types";
+import {
+  listFilesByAccount,
+  getAccountUploadStats,
+} from "$server/files/repository";
+import { env } from "$server/env";
+import { getAccountUploadLimits } from "$server/accounts/limits";
 
 export const load: PageServerLoad = async ({ locals }) => {
   const accountId = locals.session!.accountId;
-  const [files, stats] = await Promise.all([
+  const [files, stats, limits] = await Promise.all([
     listFilesByAccount(accountId),
-    getAccountUploadStats(accountId)
+    getAccountUploadStats(accountId),
+    getAccountUploadLimits(accountId),
   ]);
   const e = env();
   return {
     files,
     stats,
     limits: {
-      maxFiles: e.MAX_PER_USER,
-      maxBytes: e.MAX_SIZE_MB_PER_USER * 1024 * 1024,
-      expirationDays: e.FILE_EXPIRATION_DAYS
-    }
+      ...limits,
+      expirationDays: e.FILE_EXPIRATION_DAYS,
+    },
   };
 };
