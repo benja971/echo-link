@@ -1,6 +1,6 @@
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { Readable } from 'node:stream';
-import { env } from './env';
+import { env } from '../env';
 
 let _client: S3Client | null = null;
 

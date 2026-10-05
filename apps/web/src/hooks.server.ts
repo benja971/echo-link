@@ -1,9 +1,9 @@
 import type { Handle } from '@sveltejs/kit';
 import { env as privateEnv } from '$env/dynamic/private';
 import { env as publicEnv } from '$env/dynamic/public';
-import { decodeSession } from '$server/auth';
-import { deleteExpiredFiles } from '$server/files';
-import { s3DeleteObject } from '$server/s3';
+import { decodeSession } from '$server/accounts/session';
+import { deleteExpiredFiles } from '$server/files/repository';
+import { s3DeleteObject } from '$server/storage/objects';
 
 // Hydrate process.env from SvelteKit's env so code reading process.env
 // directly (e.g. @echo-link/db, our zod env schema) gets the right values

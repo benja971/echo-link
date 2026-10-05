@@ -1,6 +1,6 @@
 // apps/web/src/routes/app/+page.server.ts
 import type { PageServerLoad } from './$types';
-import { listFilesByAccount, getAccountUploadStats } from '$server/files';
+import { listFilesByAccount, getAccountUploadStats } from '$server/files/repository';
 import { env } from '$server/env';
 
 export const load: PageServerLoad = async ({ locals }) => {

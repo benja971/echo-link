@@ -1,8 +1,8 @@
 import type { RequestHandler } from './$types';
 import { json, error } from '@sveltejs/kit';
-import { getFileById, deleteFile, getFileBySlug, updateFileMetadata } from '$server/files';
-import { s3DeleteObject } from '$server/s3';
-import { validateSlug } from '$server/slug';
+import { getFileById, deleteFile, getFileBySlug, updateFileMetadata } from '$server/files/repository';
+import { s3DeleteObject } from '$server/storage/objects';
+import { validateSlug } from '$server/files/slug';
 
 const TITLE_MAX = 200;
 

@@ -2,8 +2,8 @@ import type { RequestHandler } from './$types';
 import { json, error } from '@sveltejs/kit';
 import { z } from 'zod';
 import { env } from '$server/env';
-import { findOrCreateAccountByEmail, createMagicLink } from '$server/accounts';
-import { sendMagicLink } from '$server/email';
+import { findOrCreateAccountByEmail, createMagicLink } from '$server/accounts/identity';
+import { sendMagicLink } from '$server/integrations/email';
 
 const Body = z.object({ email: z.string().email() });
 

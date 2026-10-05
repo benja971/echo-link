@@ -3,7 +3,7 @@ import { error } from '@sveltejs/kit';
 import { Readable } from 'node:stream';
 import { eq } from 'drizzle-orm';
 import { getDb, files } from '@echo-link/db';
-import { s3GetObjectStream } from '$server/s3';
+import { s3GetObjectStream } from '$server/storage/objects';
 
 const MEDIA_PREFIXES = ['image/', 'video/', 'audio/'];
 

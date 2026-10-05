@@ -1,6 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { processAndStoreUpload, UploadError } from '$server/upload';
+import { processAndStoreUpload, UploadError } from '$server/uploads/service';
 
 /** PWA Web Share Target endpoint. Declared in static/manifest.webmanifest:
  *  the OS POSTs a multipart/form-data with the shared `file` (and possibly

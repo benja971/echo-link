@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { json, error } from '@sveltejs/kit';
-import { processAndStoreUpload, UploadError } from '$server/upload';
-import { clientIp } from '$server/anonymous';
+import { processAndStoreUpload, UploadError } from '$server/uploads/service';
+import { clientIp } from '$server/uploads/anonymous';
 import { env } from '$server/env';
 
 export const POST: RequestHandler = async ({ request, locals }) => {

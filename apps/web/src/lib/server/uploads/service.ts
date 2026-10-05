@@ -1,12 +1,12 @@
 import { fileTypeFromBuffer } from 'file-type';
 import sharp from 'sharp';
 import { randomUUID } from 'node:crypto';
-import { s3PutBuffer } from './s3';
-import { insertFile, getAccountUploadStats } from './files';
-import { generateAndUploadVideoThumbnail } from './thumbnails';
+import { s3PutBuffer } from '../storage/objects';
+import { insertFile, getAccountUploadStats } from '../files/repository';
+import { generateAndUploadVideoThumbnail } from '../storage/thumbnails';
 import { hashIp, anonymousUploadCount } from './anonymous';
-import { deriveSlugFromTitle, findAvailableSlug } from './slug';
-import { env } from './env';
+import { deriveSlugFromTitle, findAvailableSlug } from '../files/slug';
+import { env } from '../env';
 import type { File } from '@echo-link/db';
 
 const ALLOWED_MIME = new Set([
@@ -61,7 +61,7 @@ export async function generateAndUploadImageThumbnail(
       .webp({ quality: 70 })
       .toBuffer();
     const key = `thumbnails/${fileId}.webp`;
-    const { s3PutBuffer } = await import('./s3');
+    const { s3PutBuffer } = await import('../storage/objects');
     await s3PutBuffer(key, thumb, 'image/webp');
     return key;
   } catch (err) {

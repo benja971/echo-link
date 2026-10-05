@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
 import { json, error } from '@sveltejs/kit';
-import { startDiscordLink } from '$server/discord';
+import { startDiscordLink } from '$server/integrations/discord';
 
 export const POST: RequestHandler = async ({ locals }) => {
   if (!locals.session) throw error(401, 'unauthorized');

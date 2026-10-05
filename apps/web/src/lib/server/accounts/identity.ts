@@ -8,8 +8,8 @@ import {
   type Account,
   type User
 } from '@echo-link/db';
-import { generateOpaqueToken } from './auth';
-import { env } from './env';
+import { generateOpaqueToken } from './session';
+import { env } from '../env';
 
 export async function findOrCreateAccountByEmail(email: string): Promise<{
   user: User;

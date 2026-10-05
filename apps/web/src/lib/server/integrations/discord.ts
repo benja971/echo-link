@@ -7,7 +7,7 @@ import {
   uploadIdentities,
   files as filesTbl
 } from '@echo-link/db';
-import { generateOpaqueToken, timingSafeStringEqual } from './auth';
+import { generateOpaqueToken, timingSafeStringEqual } from '../accounts/session';
 
 const SESSION_TTL_MS = 1000 * 60 * 30; // 30 min
 

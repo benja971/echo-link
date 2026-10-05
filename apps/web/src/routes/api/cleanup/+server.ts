@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { json, error } from '@sveltejs/kit';
-import { deleteExpiredFiles } from '$server/files';
-import { s3DeleteObject } from '$server/s3';
+import { deleteExpiredFiles } from '$server/files/repository';
+import { s3DeleteObject } from '$server/storage/objects';
 
 export const POST: RequestHandler = async ({ request }) => {
   const auth = request.headers.get('authorization');

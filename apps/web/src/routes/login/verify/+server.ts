@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { redirect } from '@sveltejs/kit';
-import { consumeMagicLink, getAccountForUser } from '$server/accounts';
-import { encodeSession, newSession } from '$server/auth';
+import { consumeMagicLink, getAccountForUser } from '$server/accounts/identity';
+import { encodeSession, newSession } from '$server/accounts/session';
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
   const token = url.searchParams.get('token');

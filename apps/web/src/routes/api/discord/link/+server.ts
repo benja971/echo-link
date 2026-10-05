@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { json, error } from '@sveltejs/kit';
 import { z } from 'zod';
-import { checkBotToken, consumeDiscordLinkCode } from '$server/discord';
+import { checkBotToken, consumeDiscordLinkCode } from '$server/integrations/discord';
 import { env } from '$server/env';
 
 const Body = z.object({
