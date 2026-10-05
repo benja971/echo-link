@@ -23,7 +23,7 @@
     "test:integration": "RUN_INTEGRATION=1 bun test tests/integration",
     "set-upload-tier": "bun scripts/set-upload-tier.ts",
     "check": "bun run lint && bun run test && bun run build",
-    "test:backend": "bun test apps/web/tests/receive.test.ts apps/web/tests/accounts.test.ts apps/web/tests/http.test.ts apps/web/tests/storage.test.ts apps/web/tests/finalize.test.ts apps/web/tests/validation.test.ts",
+    "test:backend": "bun test apps/web/tests/receive.test.ts apps/web/tests/accounts.test.ts apps/web/tests/http.test.ts apps/web/tests/storage.test.ts apps/web/tests/finalize.test.ts apps/web/tests/validation.test.ts apps/web/tests/email.test.ts",
     "test:ui": "bun test tests/use-shortcuts.test.js tests/modal.test.ts && bun tests/clipboard-check.mjs && bun tests/delete-files-check.mjs && bun tests/theme-check.mjs && bun tests/contrast-check.mjs && bun tests/variants-check.mjs"
   },
   "devDependencies": {

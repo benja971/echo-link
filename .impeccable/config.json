@@ -11,6 +11,12 @@
         ],
         "createdAt": "2026-10-05T10:53:47.066Z",
         "reason": "Agent review: line 123 is a desktop keyboard shortcut keycap span with neutral border-surface1 and 2px bottom edge, not an accent-bordered card; intentional keycap affordance."
+      },
+      {
+        "rule": "overused-font",
+        "value": "geist",
+        "createdAt": "2026-10-05T13:04:36.662Z",
+        "reason": "User requested email UI based on the existing site; apps/web/DESIGN.md specifies Geist Variable for body typography."
       }
     ]
   }
