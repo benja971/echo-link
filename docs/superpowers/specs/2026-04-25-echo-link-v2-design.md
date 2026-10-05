@@ -1,4 +1,6 @@
-# Echo-link v2 — Design Spec
+# Archive - Echo-link v2 Design Spec
+
+> Document de conception daté du 25 avril 2026. Il décrit les intentions de migration, pas nécessairement l’implémentation finale. Pour l’architecture et l’exploitation actuelles, consultez le [README](../../../README.md).
 
 **Date:** 2026-04-25
 **Author:** ben (with Claude as facilitator)

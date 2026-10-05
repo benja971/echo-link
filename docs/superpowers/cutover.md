@@ -1,8 +1,11 @@
-# Echo-link v2 — Cutover Guide
+# Archive - Echo-link v2 Cutover Guide
+
+> Cette page est le plan de cutover d'avril 2026. Le cutover est terminé depuis `0db7c1e` : ne l'utilisez pas comme procédure de déploiement. Référez-vous au [README](../../README.md) et à `deploy.sh`. Les migrations sont lancées explicitement par `deploy.sh`, pas au démarrage du conteneur web.
 
 This document walks you through deploying v2 to staging, running the smoke checklist, swapping DNS, and finally retiring v1. Run **in order**. The branch is `feature/v2` (15 commits as of writing); v1 stays intact on `main`.
 
 **Prerequisites:**
+
 - Staging server with Docker + Docker Compose
 - A staging URL (e.g., `v2.echo-link.example.com`) with TLS termination configured to forward to your reverse proxy / port 3000
 - A production `.env.production` based on `.env.production.example` plus the new v2 vars (see below)

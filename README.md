@@ -1,292 +1,117 @@
 # echo-link
 
-Service auto-hébergé pour partager des fichiers volumineux via Discord avec stockage MinIO/S3.
+Service auto-hébergé de partage de fichiers : déposez un fichier, obtenez une URL partageable et servez le contenu depuis votre propre stockage S3/MinIO. L'application privilégie les liens courts, les aperçus Open Graph et une utilisation rapide au clavier.
 
-## 🎯 Fonctionnalités
+## Fonctionnalités
 
-- Upload de fichiers volumineux vers un stockage objet MinIO (compatible S3)
-- Génération d'URLs de partage avec preview Discord (Open Graph)
-- Support de la lecture vidéo intégrée dans Discord (MP4/H.264)
-- Authentification par token Bearer pour les uploads
-- Base de données PostgreSQL pour le tracking des fichiers
-- Architecture modulaire et typée en TypeScript
+- Dépôt, collage et sélection de plusieurs fichiers anonymes.
+- Comptes par magic link et espace `/app` pour gérer fichiers, titres et slugs.
+- Pages de partage `/v/:uuid-ou-slug`, métadonnées Open Graph, QR code et formats de copie.
+- Proxy `/files/*` vers un bucket S3 privé, avec streaming des médias.
+- Validation par magic bytes, miniatures WebP d'images et miniatures vidéo via FFmpeg.
+- Expiration, quotas configurables et nettoyage quotidien.
+- Bot Discord séparé, PWA installable et thèmes clair/sombre avec quatre accents.
 
-## 🚀 Installation
+## Architecture
 
-### Prérequis
+| Emplacement       | Rôle                                                                            |
+| ----------------- | ------------------------------------------------------------------------------- |
+| `apps/web`        | SvelteKit 2 : interface, API et pages de partage. Runtime Bun.                  |
+| `apps/bot`        | Bot Discord `discord.js`, exécuté avec Bun.                                     |
+| `packages/db`     | Schéma Drizzle, client PostgreSQL et migrations.                                |
+| `apps/api-legacy` | Application v1 Express/React, conservée comme référence et non utilisée par v2. |
 
-- Node.js >= 20.0.0
-- PostgreSQL
-- MinIO ou service S3-compatible
-- Docker et Docker Compose (optionnel)
+`POST /api/upload` reçoit un `multipart/form-data`, détecte le type réel du fichier, applique les limites de session ou anonymes, stocke l'objet dans S3 puis persiste ses métadonnées dans PostgreSQL. Les fichiers ne sont pas publics dans MinIO : `/files/[...path]` les sert à travers l'application.
 
-### Installation locale
+Types acceptés : images JPEG/PNG/GIF/WebP/AVIF, vidéos MP4/WebM/MOV, audio MP3/WAV/OGG/FLAC, ZIP/7z/TAR/GZip et PDF.
 
-1. **Cloner le dépôt**
+## Démarrage local
 
-```bash
-git clone <repository-url>
-cd echo-link
-```
-
-2. **Installer les dépendances**
+Prérequis : Bun `>= 1.1`, PostgreSQL, un stockage S3 compatible et FFmpeg pour les miniatures vidéo. Docker Compose v2 est optionnel.
 
 ```bash
-npm install
-```
-
-3. **Configurer les variables d'environnement**
-
-Copier le fichier `.env.example` vers `.env` et ajuster les valeurs :
-
-```bash
+bun install --frozen-lockfile
 cp .env.example .env
+bun run db:migrate
+bun run dev
 ```
 
-Variables requises :
-
-```env
-# Server
-PORT=3000
-
-# Database
-DATABASE_HOST=localhost
-DATABASE_PORT=5432
-DATABASE_USERNAME=postgres
-DATABASE_PASSWORD=postgres
-DATABASE_NAME=echo-link
-DATABASE_SSL=0
-DATABASE_LOGGING=0
-
-# S3/MinIO Configuration
-S3_ENDPOINT=localhost
-S3_PORT=9000
-S3_USE_SSL=false
-S3_REGION=us-east-1
-S3_BUCKET_NAME=echo-link
-S3_FORCE_PATH_STYLE=true
-S3_ACCESS_KEY=minioadmin
-S3_SECRET_KEY=minioadmin
-
-# Public URLs
-PUBLIC_BASE_URL=https://echo-link.mondomaine.fr
-CDN_PUBLIC_BASE_URL=https://files.mondomaine.fr
-
-# Security
-UPLOAD_TOKEN=your-secret-token-here
-```
-
-4. **Initialiser la base de données**
-
-Exécuter la migration SQL :
+Le serveur Vite écoute habituellement sur `http://localhost:5173`. Lancez le bot dans un autre terminal, après configuration de ses secrets :
 
 ```bash
-psql -h localhost -U postgres -d echolink -f src/db/migrations/001_init_files.sql
+bun run dev:bot
 ```
 
-5. **Lancer en développement**
+Le schéma exécuté par `apps/web/src/lib/server/env.ts` rejette une configuration sans variables PostgreSQL, S3, URLs publiques, Resend, `SESSION_SECRET` ou `ANONYMOUS_IP_SALT`.
+
+### Docker local
+
+`docker-compose.yml` démarre `web`, `bot`, PostgreSQL et MinIO, puis crée le bucket sans le rendre public.
 
 ```bash
-npm run dev
+docker compose up --build
+docker compose run --rm --entrypoint sh web -c 'cd packages/db && bun src/migrate.ts'
+curl http://localhost:3000/api/health
 ```
 
-6. **Build pour production**
+Les identifiants MinIO et PostgreSQL de ce compose sont réservés au développement.
+
+## Configuration
+
+Les modèles sont [`.env.example`](.env.example) pour le local et [`.env.production.example`](.env.production.example) pour la production.
+
+- `PUBLIC_BASE_URL` est l'URL externe des pages de partage.
+- `CDN_PUBLIC_BASE_URL` est la base des URLs de contenu. Mettez-la égale à `PUBLIC_BASE_URL` quand `/files/*` est servi par l'application.
+- `DATABASE_*` et `S3_*` configurent PostgreSQL et le stockage objet.
+- `RESEND_API_KEY` et `EMAIL_FROM` servent aux magic links. L'expéditeur doit être vérifié par Resend.
+- `SESSION_SECRET` doit avoir au moins 32 caractères, `ANONYMOUS_IP_SALT` au moins 16.
+- `FILE_EXPIRATION_DAYS`, `MAX_PER_USER` et `MAX_SIZE_MB_PER_USER` règlent les limites de compte.
+- `ANON_*` configure le mode public anonyme.
+- `DISCORD_*`, `ECHOLINK_BOT_TOKEN` et `ECHOLINK_BASE_URL` configurent le bot.
+
+Générez les secrets avec `openssl rand -hex 32` et `openssl rand -hex 16`.
+
+## Endpoints utiles
+
+| Méthode | Route               | Usage                                                  |
+| ------- | ------------------- | ------------------------------------------------------ |
+| `GET`   | `/api/health`       | Health check.                                          |
+| `POST`  | `/api/upload`       | Upload anonyme ou authentifié, champ multipart `file`. |
+| `POST`  | `/api/auth/request` | Demande de magic link, JSON `{ "email": "..." }`.      |
+| `POST`  | `/api/auth/logout`  | Supprime la session courante.                          |
+| `GET`   | `/files/[...path]`  | Stream d'un objet enregistré.                          |
+| `GET`   | `/v/[id]`           | Page de partage par UUID ou slug.                      |
+| `POST`  | `/api/cleanup`      | Purge les fichiers expirés, Bearer `CLEANUP_TOKEN`.    |
+
+`/api/upload` est une API navigateur, sans Bearer token générique. Sans cookie de session, elle applique les limites anonymes :
 
 ```bash
-npm run build
-npm start
+curl -X POST http://localhost:5173/api/upload -F 'file=@/chemin/vers/image.png'
 ```
 
-## 🐳 Déploiement
+## Production
 
-### Développement local
-
-Le projet inclut un `docker-compose.yml` pour le développement :
+`docker-compose.prod.yml` expose l'application sur `127.0.0.1:3006` et rejoint le réseau Docker externe `infra-net`, où PostgreSQL et MinIO doivent déjà être accessibles. `deploy.sh` vérifie l'environnement, construit les images, applique les migrations dans le conteneur web, démarre les services et interroge `/api/health`.
 
 ```bash
-# Lancer tous les services
-docker-compose up -d
-
-# Vérifier les logs
-docker-compose logs -f echo-link
-
-# Arrêter les services
-docker-compose down
+./deploy.sh
 ```
 
-Services exposés :
-- **echo-link** : http://localhost:3000
-- **MinIO Console** : http://localhost:9001 (admin: minioadmin/minioadmin)
-- **MinIO API** : http://localhost:9000
-- **PostgreSQL** : localhost:5432
+Le proxy inverse doit envoyer le trafic HTTPS vers `127.0.0.1:3006`. Ne rendez pas le bucket S3 public.
 
-### Production
-
-Pour un déploiement en production avec domaine public :
+## Vérification
 
 ```bash
-# 1. Copier et configurer .env.production
-cp .env.production.example .env.production
-nano .env.production
-
-# 2. Configurer tes domaines DNS
-# echo-link.ton-domaine.fr → IP serveur
-# cdn.ton-domaine.fr → IP serveur
-
-# 3. Build et lancer
-docker-compose -f docker-compose.prod.yml up -d --build
-
-# 4. Vérifier
-curl https://echo-link.ton-domaine.fr/health
+bun run test
+bun run lint
+bun run build
 ```
 
-**📖 Guide complet** : Voir [DEPLOYMENT.md](DEPLOYMENT.md) pour les instructions détaillées
+Les tests de régression couvrent le clavier, les modales, la copie avec repli, les suppressions partielles, la migration des thèmes, les contrastes des tokens et les formats de partage. Le suivi des corrections UI et des validations navigateur est dans [l’audit d’interface](docs/audits/2026-10-05-interface.md).
 
-## 📡 Utilisation
+Avant déploiement, vérifiez un upload anonyme, un magic link avec réception réelle de l’email, un upload authentifié, une page `/v/...`, le téléchargement `/files/...` et les aperçus dans le client de messagerie visé. Les tests locaux ne certifient pas les lecteurs d’écran, les téléphones physiques ou tous les navigateurs.
 
-### Interface Web
+## Documentation connexe
 
-L'interface web minimale est accessible à l'adresse racine du serveur :
-
-```
-http://localhost:3000/
-```
-
-Fonctionnalités :
-- Champ pour saisir le token d'upload (UPLOAD_TOKEN)
-- Sélection de fichier
-- Upload et génération automatique du lien de partage
-
-### Upload via API (curl)
-
-```bash
-curl -X POST http://localhost:3000/upload \
-  -H "Authorization: Bearer your-secret-token-here" \
-  -F "file=@/path/to/video.mp4"
-```
-
-Réponse :
-
-```json
-{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "shareUrl": "https://echo-link.mondomaine.fr/v/550e8400-e29b-41d4-a716-446655440000",
-  "directUrl": "https://files.mondomaine.fr/videos/550e8400-e29b-41d4-a716-446655440000.mp4"
-}
-```
-
-### Partage dans Discord
-
-1. Copier la `shareUrl` retournée
-2. La coller dans Discord
-3. Discord affichera automatiquement un embed avec :
-   - Titre et description
-   - Thumbnail (si configuré)
-   - Lecteur vidéo intégré (pour les vidéos MP4/H.264)
-
-### Health check
-
-```bash
-curl http://localhost:3000/health
-```
-
-Réponse :
-
-```json
-{
-  "status": "ok"
-}
-```
-
-## 🏗️ Architecture
-
-```
-src/
-├── server.ts              # Point d'entrée Express
-├── config.ts              # Configuration et validation des variables d'environnement
-├── routes/
-│   ├── upload.ts          # POST /upload - Upload de fichiers
-│   ├── public.ts          # GET /v/:id - Page publique avec Open Graph
-│   └── health.ts          # GET /health - Health check
-├── services/
-│   ├── s3Service.ts       # Intégration MinIO/S3
-│   └── fileService.ts     # Logique métier fichiers
-└── db/
-    ├── pool.ts            # Pool de connexions PostgreSQL
-    └── migrations/
-        └── 001_init_files.sql
-```
-
-## 🔐 Sécurité
-
-- **Authentification** : Upload protégé par token Bearer
-- **IDs non-devinables** : UUIDs v4 pour tous les fichiers
-- **Validation** : Vérification stricte des variables d'environnement au démarrage
-- **Expiration** : Support de TTL via `expires_at` (à implémenter via tâche cron)
-
-## 🔧 Configuration reverse proxy
-
-### Caddy
-
-```caddy
-echo-link.mondomaine.fr {
-    reverse_proxy echo-link:3000
-}
-
-files.mondomaine.fr {
-    reverse_proxy minio:9000
-}
-```
-
-### Nginx
-
-```nginx
-server {
-    listen 443 ssl http2;
-    server_name echo-link.mondomaine.fr;
-
-    location / {
-        proxy_pass http://echo-link:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-
-server {
-    listen 443 ssl http2;
-    server_name files.mondomaine.fr;
-
-    client_max_body_size 1G;
-
-    location / {
-        proxy_pass http://minio:9000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-## 📝 Configuration MinIO
-
-Pour permettre l'accès public aux fichiers, configurer une policy sur le bucket :
-
-```bash
-mc alias set myminio http://localhost:9000 minioadmin minioadmin
-mc mb myminio/echo-link
-mc anonymous set download myminio/echo-link
-```
-
-## 🚧 Extensions futures
-
-- [ ] Génération automatique de thumbnails pour vidéos
-- [ ] Tâche cron de purge des fichiers expirés
-- [ ] Filtrage MIME types
-- [ ] Support de métadonnées personnalisées
-
-## 📄 Licence
-
-MIT
+- [Intégration Discord](docs/discord-bot.md)
+- [`docs/superpowers/`](docs/superpowers/) contient les archives de conception et de migration v2, pas une procédure opérationnelle.
