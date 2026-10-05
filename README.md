@@ -40,7 +40,7 @@ bun run test:integration  # serveur construit + PostgreSQL/MinIO isolés via Doc
 
 La CI exécute les mêmes contrôles et les tests d’intégration à chaque push et pull request. Les tests UI couvrent le clavier, les modales, la copie avec repli, les suppressions partielles, la migration des thèmes, les contrastes des tokens et les formats de partage. Le suivi des corrections UI et des validations navigateur est dans [l’audit d’interface](docs/audits/2026-10-05-interface.md).
 
-Les tests d'intégration créent leurs propres conteneurs et secrets éphémères, sans lire `.env.production`. Construire le projet avant de les lancer. Les tests stockage utilisent un serveur S3 simulé; les tests HTTP utilisent un vrai MinIO.
+Les tests d'intégration créent leurs propres conteneurs et secrets éphémères, sans lire `.env.production`. Construire le projet avant de les lancer. Les tests stockage utilisent un serveur S3 simulé; les tests HTTP utilisent un vrai MinIO, compilé par Docker depuis un commit amont fixé dans `tests/integration/Minio.Dockerfile`. Le premier lancement nécessite le téléchargement des sources et dépendances Go; les suivants réutilisent le cache Docker.
 
 Sur NixOS, Sharp peut nécessiter `libstdc++.so.6` dans `LD_LIBRARY_PATH`. Utiliser l'environnement de développement Nix de la machine; ce problème ne concerne pas l'image Alpine ou le runner Ubuntu.
 

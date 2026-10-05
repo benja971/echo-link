@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { createHmac, randomUUID } from "node:crypto";
-import { access, mkdtemp, readdir, rm } from "node:fs/promises";
+import { createHash, createHmac, randomUUID } from "node:crypto";
+import { access, mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { request as httpRequest } from "node:http";
 import { createRequire } from "node:module";
 import { createServer } from "node:net";
@@ -204,6 +204,20 @@ integration("production HTTP uploads with PostgreSQL and MinIO", () => {
     try {
       await access(join(root, "apps/web/build/index.js"));
       await command(["docker", "info", "--format", "{{.ServerVersion}}"]);
+      const minioDockerfile = join(root, "tests/integration/Minio.Dockerfile");
+      const minioImage = `echo-link-integration-minio:${createHash("sha256")
+        .update(await readFile(minioDockerfile))
+        .digest("hex")
+        .slice(0, 16)}`;
+      await command([
+        "docker",
+        "build",
+        "--tag",
+        minioImage,
+        "--file",
+        minioDockerfile,
+        "tests/integration",
+      ]);
       const postgresPort = await startContainer(
         `${prefix}-postgres`,
         "postgres:16-alpine",
@@ -216,7 +230,7 @@ integration("production HTTP uploads with PostgreSQL and MinIO", () => {
       );
       const minioPort = await startContainer(
         `${prefix}-minio`,
-        "minio/minio:latest",
+        minioImage,
         9000,
         {
           MINIO_ROOT_USER: "echolink_test",
@@ -337,7 +351,7 @@ integration("production HTTP uploads with PostgreSQL and MinIO", () => {
       await cleanup();
       throw error;
     }
-  }, 120_000);
+  }, 600_000);
 
   afterAll(async () => {
     if (/error|Error|failed/.test(applicationLog))
